@@ -33,10 +33,8 @@ class TableTest {
 		table.insert(2, "Brielingson", "brielingson@pescao.com");
 		table.insert(3, "Gabrielin", "gabrielin@pescao.com");
 
-		assertThat(table.getAllData()
-				.containsAll(List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-						new Record(2, "Brielingson", "brielingson@pescao.com"),
-						new Record(3, "Gabrielin", "gabrielin@pescao.com"))));
-
+		assertThat(table.getAllData()).isEqualTo(List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
+				new Record(2, "Brielingson", "brielingson@pescao.com"),
+				new Record(3, "Gabrielin", "gabrielin@pescao.com")));
 	}
 }

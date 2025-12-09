@@ -11,10 +11,10 @@ public class Table {
 	}
 
 	public List<Record> getAllData() {
-		return this.data;
+		return List.copyOf(this.data);
 	}
 
 	public void insert(int id, String name, String email) {
-		this.data = List.of(new Record(id, name, email));
+		this.data.add(new Record(id, name, email));
 	}
 }
