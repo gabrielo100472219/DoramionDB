@@ -35,7 +35,7 @@ public class SqlEngine {
 					"Received different number of arguments than expected: expected 3, received " + (tokens.length - 1),
 					List.of());
 		}
-		this.table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
+		this.table.insert(Integer.parseInt(tokens[1]), tokens[2], tokens[3]);
 		return new SqlExecutionResult(true, "Inserted successfully.", List.of());
 	}
 
