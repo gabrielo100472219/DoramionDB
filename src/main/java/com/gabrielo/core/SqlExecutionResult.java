@@ -1,4 +1,8 @@
 package com.gabrielo.core;
 
-public record SqlExecutionResult(Boolean isSuccess, String message) {
+import com.gabrielo.storage.Record;
+
+import java.util.List;
+
+public record SqlExecutionResult(Boolean isSuccess, String message, List<Record> queryResult) {
 }

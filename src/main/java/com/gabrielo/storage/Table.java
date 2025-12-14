@@ -10,6 +10,7 @@ public class Table {
 	public Table() {
 		this.data = new ArrayList<>();
 	}
+
 	public Table(List<Record> data) {
 		this.data = data;
 	}
