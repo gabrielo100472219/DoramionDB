@@ -1,11 +1,15 @@
 package com.gabrielo.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Table {
 
-	private List<Record> data;
+	private final List<Record> data;
 
+	public Table() {
+		this.data = new ArrayList<>();
+	}
 	public Table(List<Record> data) {
 		this.data = data;
 	}
