@@ -29,6 +29,7 @@ public class Interface {
 			final SqlExecutionResult result = this.engine.executeStatement(input);
 			System.out.println();
 			System.out.println(result.message());
+			System.out.println();
 			if (result.queryResult().size() > 0) {
 				result.queryResult().stream().forEach(System.out::println);
 			}

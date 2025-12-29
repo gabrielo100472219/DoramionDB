@@ -11,14 +11,14 @@ class TableTest {
 
 	@Test
 	void getAllDataOnEmptyTable() {
-		final Table table = new Table(new ArrayList<>());
+		Table table = new Table(new ArrayList<>());
 
 		assertThat(table.getAllData()).isEqualTo(List.of());
 	}
 
 	@Test
 	void insertIntoDatabaseSingleRecord() {
-		final Table table = new Table(new ArrayList<>());
+		Table table = new Table(new ArrayList<>());
 
 		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
 
@@ -27,7 +27,7 @@ class TableTest {
 
 	@Test
 	void insertIntoDatabaseMultipleRecords() {
-		final Table table = new Table(new ArrayList<>());
+		Table table = new Table(new ArrayList<>());
 
 		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
 		table.insert(2, "Brielingson", "brielingson@pescao.com");

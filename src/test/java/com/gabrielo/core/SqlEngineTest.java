@@ -12,10 +12,10 @@ class SqlEngineTest {
 
 	@Test
 	void insertsWhenStatementIsInsert() {
-		final Table table = new Table();
-		final SqlEngine engine = new SqlEngine(table);
+		Table table = new Table();
+		SqlEngine engine = new SqlEngine(table);
 
-		final SqlExecutionResult result = engine.executeStatement("insert 1 Gabrielo gabrielodon@pescao.com");
+		SqlExecutionResult result = engine.executeStatement("insert 1 Gabrielo gabrielodon@pescao.com");
 
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(result.message()).isEqualTo("Inserted successfully.");
@@ -24,11 +24,11 @@ class SqlEngineTest {
 
 	@Test
 	void getsDataWhenStatementIsSelectSingleRow() {
-		final List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-		final Table table = new Table(testData);
-		final SqlEngine engine = new SqlEngine(table);
+		List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
+		Table table = new Table(testData);
+		SqlEngine engine = new SqlEngine(table);
 
-		final SqlExecutionResult result = engine.executeStatement("select");
+		SqlExecutionResult result = engine.executeStatement("select");
 
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(result.message()).isEqualTo("Queried successfully.");
@@ -37,13 +37,13 @@ class SqlEngineTest {
 
 	@Test
 	void getsDataWhenStatementIsSelectMultipleRows() {
-		final List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
+		List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-		final Table table = new Table(testData);
-		final SqlEngine engine = new SqlEngine(table);
+		Table table = new Table(testData);
+		SqlEngine engine = new SqlEngine(table);
 
-		final SqlExecutionResult result = engine.executeStatement("select");
+		SqlExecutionResult result = engine.executeStatement("select");
 
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(result.message()).isEqualTo("Queried successfully.");
@@ -52,11 +52,11 @@ class SqlEngineTest {
 
 	@Test
 	void handlesUnknownCommand() {
-		final Table table = new Table();
-		final SqlEngine engine = new SqlEngine(table);
-		final String invalidStatement = "invalid statement";
+		Table table = new Table();
+		SqlEngine engine = new SqlEngine(table);
+		String invalidStatement = "invalid statement";
 
-		final SqlExecutionResult result = engine.executeStatement(invalidStatement);
+		SqlExecutionResult result = engine.executeStatement(invalidStatement);
 
 		assertThat(result.isSuccess()).isFalse();
 		assertThat(result.message()).isEqualTo("Unknown command: " + invalidStatement);
@@ -64,10 +64,10 @@ class SqlEngineTest {
 
 	@Test
 	void handlesEmptyQuery() {
-		final Table table = new Table();
-		final SqlEngine engine = new SqlEngine(table);
+		Table table = new Table();
+		SqlEngine engine = new SqlEngine(table);
 
-		final SqlExecutionResult result = engine.executeStatement(" ");
+		SqlExecutionResult result = engine.executeStatement(" ");
 
 		assertThat(result.isSuccess()).isFalse();
 		assertThat(result.message()).isEqualTo("Empty query");
@@ -75,11 +75,11 @@ class SqlEngineTest {
 
 	@Test
 	void insertHandlesWrongNumberOfArgs() {
-		final Table table = new Table();
-		final SqlEngine engine = new SqlEngine(table);
-		final String statement = "insert bad";
+		Table table = new Table();
+		SqlEngine engine = new SqlEngine(table);
+		String statement = "insert bad";
 
-		final SqlExecutionResult result = engine.executeStatement(statement);
+		SqlExecutionResult result = engine.executeStatement(statement);
 
 		assertThat(result.isSuccess()).isFalse();
 		assertThat(result.message())
