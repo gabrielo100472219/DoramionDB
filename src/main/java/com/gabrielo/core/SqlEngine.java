@@ -1,7 +1,7 @@
 package com.gabrielo.core;
 
-import com.gabrielo.storage.Record;
-import com.gabrielo.storage.Table;
+import com.gabrielo.backend.Record;
+import com.gabrielo.backend.Table;
 
 import java.util.List;
 

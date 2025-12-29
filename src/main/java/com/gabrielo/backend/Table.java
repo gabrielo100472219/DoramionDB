@@ -1,4 +1,4 @@
-package com.gabrielo.storage;
+package com.gabrielo.backend;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,10 +9,6 @@ public class Table {
 
 	public Table() {
 		this.data = new ArrayList<>();
-	}
-
-	public Table(List<Record> data) {
-		this.data = data;
 	}
 
 	public List<Record> getAllData() {

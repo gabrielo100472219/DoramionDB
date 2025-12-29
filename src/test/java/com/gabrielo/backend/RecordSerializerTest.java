@@ -1,6 +1,5 @@
 package com.gabrielo.backend;
 
-import com.gabrielo.storage.Record;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

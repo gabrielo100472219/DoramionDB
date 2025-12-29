@@ -1,7 +1,5 @@
 package com.gabrielo.backend;
 
-import com.gabrielo.storage.Record;
-
 import java.nio.ByteBuffer;
 
 public class RecordSerializer {

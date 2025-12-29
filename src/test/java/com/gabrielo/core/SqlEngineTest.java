@@ -1,7 +1,7 @@
 package com.gabrielo.core;
 
-import com.gabrielo.storage.Record;
-import com.gabrielo.storage.Table;
+import com.gabrielo.backend.Record;
+import com.gabrielo.backend.Table;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -24,30 +24,32 @@ class SqlEngineTest {
 
 	@Test
 	void getsDataWhenStatementIsSelectSingleRow() {
-		List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-		Table table = new Table(testData);
+		Table table = new Table();
+		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
 		SqlEngine engine = new SqlEngine(table);
 
 		SqlExecutionResult result = engine.executeStatement("select");
 
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(result.message()).isEqualTo("Queried successfully.");
-		assertThat(result.queryResult()).isEqualTo(testData);
+		assertThat(result.queryResult()).isEqualTo(List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com")));
 	}
 
 	@Test
 	void getsDataWhenStatementIsSelectMultipleRows() {
-		List<Record> testData = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-				new Record(2, "Brielingson", "brielingson@pescao.com"),
-				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-		Table table = new Table(testData);
+		Table table = new Table();
+		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
+		table.insert(2, "Brielingson", "brielingson@pescao.com");
+		table.insert(3, "Gabrielin", "gabrielin@pescao.com");
 		SqlEngine engine = new SqlEngine(table);
 
 		SqlExecutionResult result = engine.executeStatement("select");
 
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(result.message()).isEqualTo("Queried successfully.");
-		assertThat(result.queryResult()).isEqualTo(testData);
+		assertThat(result.queryResult()).isEqualTo(List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
+				new Record(2, "Brielingson", "brielingson@pescao.com"),
+				new Record(3, "Gabrielin", "gabrielin@pescao.com")));
 	}
 
 	@Test
