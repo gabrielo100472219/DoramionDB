@@ -32,7 +32,7 @@ El objetivo es tener una interfaz funcional y un almacenamiento volátil. Entend
 - [x] **Configuración del Entorno:** Setup de Maven/Gradle, Java 21+ y JUnit 5.
 
 - [x] **El REPL (Read-Eval-Print Loop):** Crear un bucle infinito que acepte comandos (`Scanner`).
-0
+
 - [x] **Tokenizer Básico:** Romper cadenas de texto (`insert 1 user`) en tokens manejables.
 
 - [x] **Hardcoded Table:** Implementar una tabla fija con columnas predefinidas (`id`, `username`, `email`) usando Java Records.
