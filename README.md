@@ -7,7 +7,7 @@
 El proyecto sigue la arquitectura clásica de **SQLite**, implementando un motor de almacenamiento basado en B-Trees, un sistema de paginación de memoria y un compilador SQL básico.
 
 ---
-a
+
 ## 🏗 Arquitectura
 
 El sistema está dividido en tres capas principales que separan las responsabilidades lógicas de las físicas:
