@@ -7,7 +7,7 @@ public class RecordSerializer {
 	private final int ID_SIZE = 4;
 	private final int NAME_SIZE = 32;
 	private final int EMAIL_SIZE = 32;
-	private final int RECORD_SIZE = ID_SIZE + NAME_SIZE + EMAIL_SIZE;
+	public final int RECORD_SIZE = ID_SIZE + NAME_SIZE + EMAIL_SIZE;
 	private final int NAME_OFFSET = ID_SIZE;
 	private final int EMAIL_OFFSET = NAME_OFFSET + NAME_SIZE;
 
