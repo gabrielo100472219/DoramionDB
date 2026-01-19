@@ -7,13 +7,9 @@ public class Pager {
 
 	private static final int MAX_NUMBER_OF_PAGES = 100;
 
-	private static final int PAGE_SIZE = 4096;
-
 	private final Page[] pages = new Page[MAX_NUMBER_OF_PAGES];
 
 	private final RecordSerializer serializer = new RecordSerializer();
-
-	private final int recordsPerPage = PAGE_SIZE / serializer.RECORD_SIZE;
 
 	public void insert(Record record) {
 		Page currentPage = getLastPage();
