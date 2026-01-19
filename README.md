@@ -21,7 +21,7 @@ El sistema está dividido en tres capas principales que separan las responsabili
 
 ---
 
-## 🗺 Roadmap y Hitos Técnicos
+## 🗺 Roadmap e Hitos Técnicos
 
 El desarrollo es iterativo. Empezamos con una lista en memoria y terminaremos con un árbol balanceado persistente en disco.
 

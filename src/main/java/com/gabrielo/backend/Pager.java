@@ -1,14 +1,13 @@
 package com.gabrielo.backend;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Pager {
 
-	private final int MAX_NUMBER_OF_PAGES = 100;
+	private static final int MAX_NUMBER_OF_PAGES = 100;
 
-	private final int PAGE_SIZE = 4096;
+	private static final int PAGE_SIZE = 4096;
 
 	private final Page[] pages = new Page[MAX_NUMBER_OF_PAGES];
 
@@ -16,30 +15,47 @@ public class Pager {
 
 	private final int recordsPerPage = PAGE_SIZE / serializer.RECORD_SIZE;
 
-	private int recordCount = 0;
-
 	public void insert(Record record) {
+		Page currentPage = getLastPage();
+
 		byte[] serializedRecord = serializer.serialize(record);
-		int pageIndex = recordCount == 0 ? 0 : recordCount / recordsPerPage;
-		if (pages[pageIndex] == null) {
-			pages[pageIndex] = new Page();
+
+		if (!currentPage.insert(serializedRecord)) {
+			currentPage = createNewPage();
+			currentPage.insert(serializedRecord);
 		}
-		if (pages[pageIndex].buffer == null) {
-			pages[pageIndex].buffer = ByteBuffer.allocate(PAGE_SIZE);
+	}
+
+	private Page getLastPage() {
+		for (int i = MAX_NUMBER_OF_PAGES - 1; i >= 0; i--) {
+			if (pages[i] != null) {
+				return pages[i];
+			}
 		}
-		pages[pageIndex].buffer.put(serializedRecord);
-		recordCount++;
+		return createNewPage();
+	}
+
+	private Page createNewPage() {
+		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
+			if (pages[i] == null) {
+				pages[i] = new Page(serializer.RECORD_SIZE);
+				return pages[i];
+			}
+		}
+		throw new IllegalStateException("All pages are full");
 	}
 
 	public List<Record> getAllRecords() {
-		byte[] rawData = new byte[serializer.RECORD_SIZE];
-		List<Record> result = new ArrayList<>();
-		for (int i = 0; i < recordCount; i++) {
-			int pageIndex = i / recordsPerPage;
-			int recordIndex = (i - pageIndex * recordsPerPage) * serializer.RECORD_SIZE;
-			pages[pageIndex].buffer.get(recordIndex, rawData, 0, serializer.RECORD_SIZE);
-			result.add(serializer.deserialize(rawData));
+		List<Record> recordList = new ArrayList<>();
+		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
+			if (pages[i] == null) {
+				break;
+			}
+			int recordsInPage = pages[i].getRecordCount();
+			for (int j = 0; j < recordsInPage; j++) {
+				recordList.add(serializer.deserialize(pages[i].getRecordAt(j)));
+			}
 		}
-		return result;
+		return recordList;
 	}
 }
