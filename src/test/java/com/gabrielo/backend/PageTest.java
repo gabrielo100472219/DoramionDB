@@ -6,6 +6,8 @@ import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PageTest {
 
@@ -62,10 +64,26 @@ class PageTest {
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
 
-		recordsToInsert.stream().forEach(record -> page.insert(serializer.serialize(record)));
+		recordsToInsert.forEach(record -> page.insert(serializer.serialize(record)));
 
 		assertThatThrownBy(() -> page.getRecordAt(recordsToInsert.size()))
 				.isInstanceOf(IndexOutOfBoundsException.class);
 		assertThatThrownBy(() -> page.getRecordAt(-1)).isInstanceOf(IndexOutOfBoundsException.class);
+	}
+
+	@Test
+	void pageIsNotDirtyByDefault() {
+		Page page = new Page(testId, serializer.RECORD_SIZE);
+
+		assertFalse(page.isDirty());
+	}
+
+	@Test
+	void pageIsMarkedDirtyAfterInsert() {
+		Page page = new Page(testId, serializer.RECORD_SIZE);
+		Record record = new Record(1, "Brielard", "bronson.com");
+		page.insert(serializer.serialize(record));
+
+		assertTrue(page.isDirty());
 	}
 }

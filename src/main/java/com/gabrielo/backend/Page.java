@@ -18,11 +18,15 @@ public class Page {
 
 	private static final int pageSize = 4096;
 
+	@Getter
+	private boolean dirty;
+
 	public Page(int id, int recordSize) {
 		this.buffer = ByteBuffer.allocate(pageSize);
 		this.id = id;
 		this.recordCount = 0;
 		this.recordSize = recordSize;
+		this.dirty = false;
 	}
 
 	public boolean insert(byte[] recordData) {
@@ -31,6 +35,7 @@ public class Page {
 		}
 		buffer.put(recordData);
 		recordCount++;
+		dirty = true;
 		return true;
 	}
 
