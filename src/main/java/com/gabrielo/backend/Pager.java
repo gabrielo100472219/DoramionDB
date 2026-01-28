@@ -34,7 +34,7 @@ public class Pager {
 	private Page createNewPage() {
 		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
 			if (pages[i] == null) {
-				pages[i] = new Page(serializer.RECORD_SIZE);
+				pages[i] = new Page(0, serializer.RECORD_SIZE);
 				return pages[i];
 			}
 		}

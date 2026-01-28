@@ -11,9 +11,11 @@ class PageTest {
 
 	RecordSerializer serializer = new RecordSerializer();
 
+	int testId = 0;
+
 	@Test
 	void insertSingleRecord() {
-		Page page = new Page(serializer.RECORD_SIZE);
+		Page page = new Page(testId, serializer.RECORD_SIZE);
 		Record record = new Record(1, "Brielard", "bronson.com");
 
 		boolean result = page.insert(serializer.serialize(record));
@@ -25,7 +27,7 @@ class PageTest {
 
 	@Test
 	void insertMultipleRecords() {
-		Page page = new Page(serializer.RECORD_SIZE);
+		Page page = new Page(testId, serializer.RECORD_SIZE);
 		List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
@@ -41,7 +43,7 @@ class PageTest {
 
 	@Test
 	void insertReturnsFalseWhenPageIsFull() {
-		Page page = new Page(serializer.RECORD_SIZE);
+		Page page = new Page(testId, serializer.RECORD_SIZE);
 		int pageSize = 4096;
 		int recordsPerPage = pageSize / serializer.RECORD_SIZE;
 		Record record = new Record(1, "Brielard", "bronson.com");
@@ -55,7 +57,7 @@ class PageTest {
 
 	@Test
 	void getRecordThrowsExceptionWhenInvalidIndex() {
-		Page page = new Page(serializer.RECORD_SIZE);
+		Page page = new Page(testId, serializer.RECORD_SIZE);
 		List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));

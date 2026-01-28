@@ -9,14 +9,18 @@ public class Page {
 	private final ByteBuffer buffer;
 
 	@Getter
+	private final int id;
+
+	@Getter
 	private int recordCount;
 
 	private final int recordSize;
 
 	private static final int pageSize = 4096;
 
-	public Page(int recordSize) {
+	public Page(int id, int recordSize) {
 		this.buffer = ByteBuffer.allocate(pageSize);
+		this.id = id;
 		this.recordCount = 0;
 		this.recordSize = recordSize;
 	}
