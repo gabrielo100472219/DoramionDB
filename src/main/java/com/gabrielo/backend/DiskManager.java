@@ -12,6 +12,10 @@ public class DiskManager {
 
 	private final int pageSize;
 
+	private final int pageMetadataSize = Integer.BYTES;
+
+	private final int metadataSize = Integer.BYTES;
+
 	public DiskManager(Path filePath, int pageSize) {
 		this.filePath = filePath;
 		this.pageSize = pageSize;
@@ -41,10 +45,35 @@ public class DiskManager {
 	}
 
 	public Page readPageFromDisk(int id) throws IOException {
-		return new Page(1, 1);
+		try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ)) {
+			ByteBuffer pageBuffer = ByteBuffer.allocate(pageMetadataSize + pageSize);
+			channel.read(pageBuffer, metadataSize);
+			pageBuffer.flip();
+
+			int storedId = pageBuffer.getInt();
+
+			byte[] data = new byte[pageSize];
+			pageBuffer.get(data);
+
+			int recordSize = 68;
+			Page page = new Page(storedId, recordSize);
+			page.getBuffer().put(data);
+			page.getBuffer().flip();
+
+			return page;
+		}
 	}
 
-	public void writePageToDisk(Page page) {
+	public void writePageToDisk(Page page) throws IOException {
+		try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ,
+				StandardOpenOption.WRITE)) {
 
+			ByteBuffer pageBuffer = ByteBuffer.allocate(pageMetadataSize + pageSize);
+			pageBuffer.putInt(page.getId());
+			pageBuffer.put(page.getBuffer().array());
+			pageBuffer.flip();
+
+			channel.write(pageBuffer, metadataSize);
+		}
 	}
 }

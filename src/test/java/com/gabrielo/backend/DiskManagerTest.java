@@ -8,9 +8,11 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DiskManagerTest {
+class DiskManagerTest {
 
 	int pageSize = 4096;
+
+	int recordSize = 68;
 
 	@Test
 	@SneakyThrows
@@ -32,5 +34,18 @@ public class DiskManagerTest {
 		diskManager.getNumberOfPages();
 
 		assertThat(testFile).exists();
+	}
+
+	@Test
+	@SneakyThrows
+	void insertsOnePageToFile(@TempDir Path tempDir) {
+		Path testFile = tempDir.resolve("test.ddb");
+		DiskManager diskManager = new DiskManager(testFile, pageSize);
+		int id = 0;
+		Page page = new Page(id, recordSize);
+
+		diskManager.writePageToDisk(page);
+
+		assertThat(diskManager.readPageFromDisk(id)).isEqualTo(page);
 	}
 }

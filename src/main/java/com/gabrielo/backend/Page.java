@@ -1,11 +1,14 @@
 package com.gabrielo.backend;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;
 
+@EqualsAndHashCode
 public class Page {
 
+	@Getter
 	private final ByteBuffer buffer;
 
 	@Getter
