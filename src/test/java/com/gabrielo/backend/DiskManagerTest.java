@@ -83,9 +83,7 @@ class DiskManagerTest {
 		List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-		recordsToInsert.forEach((recordToInsert -> {
-			page.insert(serializer.serialize(recordToInsert));
-		}));
+		recordsToInsert.forEach(recordToInsert -> page.insert(serializer.serialize(recordToInsert)));
 
 		diskManager.writePageToDisk(page);
 
@@ -101,11 +99,8 @@ class DiskManagerTest {
 		List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
 				new Record(2, "Brielingson", "brielingson@pescao.com"),
 				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-		pagesToInsert.forEach(page -> {
-			recordsToInsert.forEach((recordToInsert -> {
-				page.insert(serializer.serialize(recordToInsert));
-			}));
-		});
+		pagesToInsert.forEach(
+				page -> recordsToInsert.forEach(recordToInsert -> page.insert(serializer.serialize(recordToInsert))));
 
 		for (Page page : pagesToInsert) {
 			diskManager.writePageToDisk(page);
