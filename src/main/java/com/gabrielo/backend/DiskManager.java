@@ -12,9 +12,9 @@ public class DiskManager {
 
 	private final int pageSize;
 
-	private final int pageMetadataSize = Integer.BYTES;
+	private static final int PAGE_METADATA_SIZE = Integer.BYTES;
 
-	private final int metadataSize = Integer.BYTES;
+	private static final int METADATA_SIZE = Integer.BYTES;
 
 	public DiskManager(Path filePath, int pageSize) {
 		this.filePath = filePath;
@@ -30,11 +30,15 @@ public class DiskManager {
 				return 0;
 			}
 
-			ByteBuffer buffer = ByteBuffer.allocate(4);
-			channel.read(buffer, 0);
-			buffer.flip();
-			return buffer.getInt();
+			return readNumberOfPagesFromMetadata(channel);
 		}
+	}
+
+	private static int readNumberOfPagesFromMetadata(FileChannel channel) throws IOException {
+		ByteBuffer buffer = ByteBuffer.allocate(4);
+		channel.read(buffer, 0);
+		buffer.flip();
+		return buffer.getInt();
 	}
 
 	private void initializeMetadata(FileChannel channel) throws IOException {
@@ -46,34 +50,67 @@ public class DiskManager {
 
 	public Page readPageFromDisk(int id) throws IOException {
 		try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ)) {
-			ByteBuffer pageBuffer = ByteBuffer.allocate(pageMetadataSize + pageSize);
-			channel.read(pageBuffer, metadataSize);
-			pageBuffer.flip();
+			if (channel.size() == 0) {
+				initializeMetadata(channel);
+				return null;
+			}
 
-			int storedId = pageBuffer.getInt();
+			int numberOfPages = readNumberOfPagesFromMetadata(channel);
+			ByteBuffer pageBuffer = ByteBuffer.allocate(PAGE_METADATA_SIZE + pageSize);
 
-			byte[] data = new byte[pageSize];
-			pageBuffer.get(data);
+			for (int i = 0; i < numberOfPages; i++) {
+				long readPosition = METADATA_SIZE + (long) i * (pageSize + PAGE_METADATA_SIZE);
 
-			int recordSize = 68;
-			Page page = new Page(storedId, recordSize);
-			page.getBuffer().put(data);
-			page.getBuffer().flip();
+				channel.read(pageBuffer, readPosition);
+				pageBuffer.flip();
 
-			return page;
+				int pageId = pageBuffer.getInt();
+
+				if (pageId == id) {
+					return createPageWith(id, pageBuffer);
+				}
+				pageBuffer.clear();
+			}
+			return null;
 		}
+	}
+
+	private Page createPageWith(int id, ByteBuffer pageBuffer) {
+		byte[] data = new byte[pageSize];
+		pageBuffer.get(data);
+
+		int recordSize = 68;
+		Page page = new Page(id, recordSize);
+		page.getBuffer().put(data);
+		page.getBuffer().flip();
+		return page;
 	}
 
 	public void writePageToDisk(Page page) throws IOException {
 		try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ,
 				StandardOpenOption.WRITE)) {
 
-			ByteBuffer pageBuffer = ByteBuffer.allocate(pageMetadataSize + pageSize);
+			if (channel.size() == 0) {
+				initializeMetadata(channel);
+			}
+			int numberOfPages = readNumberOfPagesFromMetadata(channel);
+			long writePosition = METADATA_SIZE + (long) numberOfPages * (PAGE_METADATA_SIZE + pageSize);
+
+			ByteBuffer pageBuffer = ByteBuffer.allocate(PAGE_METADATA_SIZE + pageSize);
 			pageBuffer.putInt(page.getId());
 			pageBuffer.put(page.getBuffer().array());
 			pageBuffer.flip();
 
-			channel.write(pageBuffer, metadataSize);
+			channel.write(pageBuffer, writePosition);
+
+			writeNumberOfPagesToMetadata(numberOfPages, channel);
 		}
+	}
+
+	private void writeNumberOfPagesToMetadata(int numberOfPages, FileChannel channel) throws IOException {
+		ByteBuffer metadataBuffer = ByteBuffer.allocate(METADATA_SIZE);
+		metadataBuffer.putInt(numberOfPages + 1);
+		metadataBuffer.flip();
+		channel.write(metadataBuffer, 0);
 	}
 }
