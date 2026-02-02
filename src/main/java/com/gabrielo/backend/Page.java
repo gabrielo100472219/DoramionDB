@@ -17,15 +17,15 @@ public class Page {
 	@Getter
 	private int recordCount;
 
-	private final int recordSize;
-
-	private static final int pageSize = 4096;
-
 	@Getter
 	private boolean dirty;
 
+	private final int recordSize;
+
+	private static final int PAGE_SIZE = 4096;
+
 	public Page(int id, int recordSize) {
-		this.buffer = ByteBuffer.allocate(pageSize);
+		this.buffer = ByteBuffer.allocate(PAGE_SIZE);
 		this.id = id;
 		this.recordCount = 0;
 		this.recordSize = recordSize;
@@ -43,7 +43,7 @@ public class Page {
 	}
 
 	private boolean isFull() {
-		return (recordCount + 1) * recordSize > pageSize;
+		return (recordCount + 1) * recordSize > PAGE_SIZE;
 	}
 
 	public byte[] getRecordAt(int recordIndex) {

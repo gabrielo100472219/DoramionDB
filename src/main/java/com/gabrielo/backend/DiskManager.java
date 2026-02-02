@@ -12,7 +12,8 @@ public class DiskManager {
 
 	private final int pageSize;
 
-	private static final int PAGE_METADATA_SIZE = Integer.BYTES;
+	// Page id + Page number of records
+	private static final int PAGE_METADATA_SIZE = 2 * Integer.BYTES;
 
 	private static final int METADATA_SIZE = Integer.BYTES;
 
@@ -76,13 +77,17 @@ public class DiskManager {
 	}
 
 	private Page createPageWith(int id, ByteBuffer pageBuffer) {
-		byte[] data = new byte[pageSize];
-		pageBuffer.get(data);
-
 		int recordSize = 68;
 		Page page = new Page(id, recordSize);
-		page.getBuffer().put(data);
-		page.getBuffer().flip();
+
+		int recordCount = pageBuffer.getInt();
+
+		for (int i = 0; i < recordCount; i++) {
+			byte[] recordData = new byte[recordSize];
+			pageBuffer.get(recordData);
+			page.insert(recordData);
+		}
+
 		return page;
 	}
 
@@ -98,6 +103,7 @@ public class DiskManager {
 
 			ByteBuffer pageBuffer = ByteBuffer.allocate(PAGE_METADATA_SIZE + pageSize);
 			pageBuffer.putInt(page.getId());
+			pageBuffer.putInt(page.getRecordCount());
 			pageBuffer.put(page.getBuffer().array());
 			pageBuffer.flip();
 
