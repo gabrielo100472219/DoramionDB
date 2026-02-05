@@ -1,5 +1,6 @@
 package com.gabrielo.backend;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,47 +12,93 @@ public class Pager {
 
 	private final RecordSerializer serializer = new RecordSerializer();
 
-	public void insert(Record record) {
-		Page currentPage = getLastPage();
+	private final DiskManager diskManager;
+
+	private int totalPagesCreated = -1;
+
+	public Pager(DiskManager diskManager) {
+		this.diskManager = diskManager;
+	}
+
+	public void insert(Record record) throws IOException {
+		initializeTotalPagesCreated();
+
+		if (totalPagesCreated == 0) {
+			totalPagesCreated = 1;
+		}
+
+		int lastPageId = totalPagesCreated - 1;
+		int pageIndex = lastPageId % MAX_NUMBER_OF_PAGES;
+
+		ensurePageAvailable(pageIndex, lastPageId);
 
 		byte[] serializedRecord = serializer.serialize(record);
-
-		if (!currentPage.insert(serializedRecord)) {
-			currentPage = createNewPage();
-			currentPage.insert(serializedRecord);
+		if (!pages[pageIndex].insert(serializedRecord)) {
+			Page nextPage = createNextPage();
+			nextPage.insert(serializedRecord);
 		}
 	}
 
-	private Page getLastPage() {
-		for (int i = MAX_NUMBER_OF_PAGES - 1; i >= 0; i--) {
-			if (pages[i] != null) {
-				return pages[i];
+	private Page createNextPage() throws IOException {
+		totalPagesCreated++;
+		int newPageIndex = (totalPagesCreated - 1) % MAX_NUMBER_OF_PAGES;
+		if (pages[newPageIndex] != null) {
+			evictPage(newPageIndex);
+		}
+		pages[newPageIndex] = new Page(totalPagesCreated - 1, serializer.RECORD_SIZE);
+		return pages[newPageIndex];
+	}
+
+	private void ensurePageAvailable(int pageIndex, int pageId) throws IOException {
+		if (pages[pageIndex] == null) {
+			pages[pageIndex] = diskManager.readPageFromDisk(pageId);
+			if (pages[pageIndex] == null) {
+				pages[pageIndex] = new Page(pageId, serializer.RECORD_SIZE);
 			}
 		}
-		return createNewPage();
+
+		if (pages[pageIndex].getId() != pageId) {
+			evictPage(pageIndex);
+			pages[pageIndex] = new Page(pageId, serializer.RECORD_SIZE);
+		}
 	}
 
-	private Page createNewPage() {
+	private void evictPage(int pageIndex) throws IOException {
+		if (pages[pageIndex] != null && pages[pageIndex].isDirty()) {
+			diskManager.writePageToDisk(pages[pageIndex]);
+		}
+	}
+
+	public void flushAllPages() throws IOException {
 		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
-			if (pages[i] == null) {
-				pages[i] = new Page(0, serializer.RECORD_SIZE);
-				return pages[i];
+			if (pages[i] != null && pages[i].isDirty()) {
+				diskManager.writePageToDisk(pages[i]);
 			}
 		}
-		throw new IllegalStateException("All pages are full");
 	}
 
-	public List<Record> getAllRecords() {
+	public List<Record> getAllRecords() throws IOException {
+		initializeTotalPagesCreated();
 		List<Record> recordList = new ArrayList<>();
-		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
-			if (pages[i] == null) {
-				break;
+		for (int i = 0; i < totalPagesCreated; i++) {
+			int pageIndex = i % MAX_NUMBER_OF_PAGES;
+			if (pages[pageIndex] == null || pages[pageIndex].getId() != i) {
+				if (pages[pageIndex] != null) {
+					evictPage(pageIndex);
+				}
+				pages[pageIndex] = diskManager.readPageFromDisk(i);
 			}
-			int recordsInPage = pages[i].getRecordCount();
+			int recordsInPage = pages[pageIndex].getRecordCount();
 			for (int j = 0; j < recordsInPage; j++) {
-				recordList.add(serializer.deserialize(pages[i].getRecordAt(j)));
+				recordList.add(serializer.deserialize(pages[pageIndex].getRecordAt(j)));
 			}
 		}
 		return recordList;
+	}
+
+	private void initializeTotalPagesCreated() throws IOException {
+		if (totalPagesCreated == -1) {
+			totalPagesCreated = diskManager.getNumberOfPages();
+		}
 	}
 }

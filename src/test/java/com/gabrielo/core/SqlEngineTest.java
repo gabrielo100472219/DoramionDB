@@ -1,18 +1,36 @@
 package com.gabrielo.core;
 
+import com.gabrielo.backend.DiskManager;
+import com.gabrielo.backend.Pager;
 import com.gabrielo.backend.Record;
 import com.gabrielo.backend.Table;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class SqlEngineTest {
 
+	private static final int PAGE_SIZE = 4096;
+
+	@TempDir
+	Path tempDir;
+
+	private int testCounter = 0;
+
+	private Table createTable() {
+		Path dbFile = tempDir.resolve("test" + (testCounter++) + ".ddb");
+		DiskManager diskManager = new DiskManager(dbFile, PAGE_SIZE);
+		Pager pager = new Pager(diskManager);
+		return new Table(pager);
+	}
+
 	@Test
 	void insertsWhenStatementIsInsert() {
-		Table table = new Table();
+		Table table = createTable();
 		SqlEngine engine = new SqlEngine(table);
 
 		SqlExecutionResult result = engine.executeStatement("insert 1 Gabrielo gabrielodon@pescao.com");
@@ -24,7 +42,7 @@ class SqlEngineTest {
 
 	@Test
 	void getsDataWhenStatementIsSelectSingleRow() {
-		Table table = new Table();
+		Table table = createTable();
 		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
 		SqlEngine engine = new SqlEngine(table);
 
@@ -37,7 +55,7 @@ class SqlEngineTest {
 
 	@Test
 	void getsDataWhenStatementIsSelectMultipleRows() {
-		Table table = new Table();
+		Table table = createTable();
 		table.insert(1, "Gabrielo", "gabrielodon@pescao.com");
 		table.insert(2, "Brielingson", "brielingson@pescao.com");
 		table.insert(3, "Gabrielin", "gabrielin@pescao.com");
@@ -54,7 +72,7 @@ class SqlEngineTest {
 
 	@Test
 	void handlesUnknownCommand() {
-		Table table = new Table();
+		Table table = createTable();
 		SqlEngine engine = new SqlEngine(table);
 		String invalidStatement = "invalid statement";
 
@@ -66,7 +84,7 @@ class SqlEngineTest {
 
 	@Test
 	void handlesEmptyQuery() {
-		Table table = new Table();
+		Table table = createTable();
 		SqlEngine engine = new SqlEngine(table);
 
 		SqlExecutionResult result = engine.executeStatement(" ");
@@ -77,7 +95,7 @@ class SqlEngineTest {
 
 	@Test
 	void insertHandlesWrongNumberOfArgs() {
-		Table table = new Table();
+		Table table = createTable();
 		SqlEngine engine = new SqlEngine(table);
 		String statement = "insert bad";
 

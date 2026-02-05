@@ -7,9 +7,9 @@ public class Interface {
 	private final Scanner scanner;
 	private final SqlEngine engine;
 
-	public Interface() {
+	public Interface(SqlEngine engine) {
 		this.scanner = new Scanner(System.in);
-		this.engine = new SqlEngine();
+		this.engine = engine;
 	}
 
 	public Interface(Scanner scanner, SqlEngine engine) {
@@ -30,7 +30,7 @@ public class Interface {
 			System.out.println();
 			System.out.println(result.message());
 			System.out.println();
-			if (result.queryResult().size() > 0) {
+			if (result.queryResult().isEmpty()) {
 				result.queryResult().stream().forEach(System.out::println);
 			}
 			System.out.println();

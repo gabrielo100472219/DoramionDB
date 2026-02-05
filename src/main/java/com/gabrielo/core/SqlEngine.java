@@ -9,13 +9,10 @@ public class SqlEngine {
 
 	private final Table table;
 
-	public SqlEngine() {
-		this.table = new Table();
-	}
-
 	public SqlEngine(Table table) {
 		this.table = table;
 	}
+
 	public SqlExecutionResult executeStatement(String statement) {
 		final String[] tokens = statement.split(" ");
 		if (tokens.length == 0) {
