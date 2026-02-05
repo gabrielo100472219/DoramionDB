@@ -50,11 +50,11 @@ Aquí abandonamos el `ArrayList` y empezamos a trabajar con bytes crudos. Si a
 
 - [x] **Implementación del Pager:** Crear la clase que lee/escribe bloques de 4KB desde el disco a la memoria.
 
-- [ ] **Capa de Abstracción de Archivos:** Usar `RandomAccessFile` o `FileChannel` de Java NIO.
+- [x] **Capa de Abstracción de Archivos:** Usar `RandomAccessFile` o `FileChannel` de Java NIO.
 
 - [ ] **El Cursor:** Implementar un objeto iterador que sepa moverse por las filas dentro de las páginas binarias.
 
-- [ ] **Persistencia Básica:** Lograr que al reiniciar la app, los datos se lean del archivo `.db`.
+- [x] **Persistencia Básica:** Lograr que al reiniciar la app, los datos se lean del archivo `.db`.
 
 
 ### 🌳 Fase 3: La Estructura B-Tree (El Núcleo)
