@@ -80,7 +80,7 @@ class PagerTest {
 	@SneakyThrows
 	void handlesInsertsOfMoreRecordsThanTheFittingInMemoryPages() {
 		Pager pager = createPager();
-		int numberOfPages = 101;
+		int numberOfPages = 105;
 
 		for (int j = 0; j < numberOfPages; j++) {
 			for (int i = 0; i < recordsPerPage; i++) {

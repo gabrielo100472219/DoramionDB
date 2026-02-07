@@ -39,6 +39,23 @@ public class Pager {
 		}
 	}
 
+	private void initializeTotalPagesCreated() throws IOException {
+		if (totalPagesCreated == -1) {
+			totalPagesCreated = diskManager.getNumberOfPages();
+		}
+	}
+
+	private void ensurePageAvailable(int pageIndex, int pageId) throws IOException {
+		if (pages[pageIndex] == null) {
+			pages[pageIndex] = loadOrCreatePage(pageId);
+		}
+	}
+
+	private Page loadOrCreatePage(int pageId) throws IOException {
+		Page page = diskManager.readPageFromDisk(pageId);
+		return page == null ? new Page(pageId, serializer.RECORD_SIZE) : page;
+	}
+
 	private Page createNextPage() throws IOException {
 		totalPagesCreated++;
 		int newPageIndex = (totalPagesCreated - 1) % MAX_NUMBER_OF_PAGES;
@@ -47,20 +64,6 @@ public class Pager {
 		}
 		pages[newPageIndex] = new Page(totalPagesCreated - 1, serializer.RECORD_SIZE);
 		return pages[newPageIndex];
-	}
-
-	private void ensurePageAvailable(int pageIndex, int pageId) throws IOException {
-		if (pages[pageIndex] == null) {
-			pages[pageIndex] = diskManager.readPageFromDisk(pageId);
-			if (pages[pageIndex] == null) {
-				pages[pageIndex] = new Page(pageId, serializer.RECORD_SIZE);
-			}
-		}
-
-		if (pages[pageIndex].getId() != pageId) {
-			evictPage(pageIndex);
-			pages[pageIndex] = new Page(pageId, serializer.RECORD_SIZE);
-		}
 	}
 
 	private void evictPage(int pageIndex) throws IOException {
@@ -94,11 +97,5 @@ public class Pager {
 			}
 		}
 		return recordList;
-	}
-
-	private void initializeTotalPagesCreated() throws IOException {
-		if (totalPagesCreated == -1) {
-			totalPagesCreated = diskManager.getNumberOfPages();
-		}
 	}
 }
