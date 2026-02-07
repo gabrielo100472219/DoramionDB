@@ -73,20 +73,33 @@ public class Pager {
 
 	public List<Record> getAllRecords() throws IOException {
 		initializeTotalPagesCreated();
+
 		List<Record> recordList = new ArrayList<>();
 		for (int i = 0; i < totalPagesCreated; i++) {
 			int pageIndex = i % MAX_NUMBER_OF_PAGES;
-			if (pages[pageIndex] == null || pages[pageIndex].getId() != i) {
-				if (pages[pageIndex] != null) {
-					evictPage(pageIndex);
-				}
-				pages[pageIndex] = diskManager.readPageFromDisk(i);
-			}
-			int recordsInPage = pages[pageIndex].getRecordCount();
-			for (int j = 0; j < recordsInPage; j++) {
-				recordList.add(serializer.deserialize(pages[pageIndex].getRecordAt(j)));
-			}
+			ensurePageAvailable(pageIndex, i);
+			recordList.addAll(readAllRecordsFromPageToList(pageIndex));
 		}
 		return recordList;
+	}
+
+	private List<Record> readAllRecordsFromPageToList(int pageIndex) {
+		List<Record> records = new ArrayList<>();
+		int recordsInPage = pages[pageIndex].getRecordCount();
+		for (int i = 0; i < recordsInPage; i++) {
+			records.add(serializer.deserialize(pages[pageIndex].getRecordAt(i)));
+		}
+		return records;
+	}
+
+	private void ensurePageAvailable(int pageIndex, int i) throws IOException {
+		if (pages[pageIndex] == null) {
+			pages[pageIndex] = diskManager.readPageFromDisk(i);
+		}
+
+		if (pages[pageIndex].getId() != i) {
+			evictPage(pageIndex);
+			pages[pageIndex] = diskManager.readPageFromDisk(i);
+		}
 	}
 }
