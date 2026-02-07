@@ -24,13 +24,15 @@ public class Pager {
 		initializeTotalPagesCreated();
 
 		if (totalPagesCreated == 0) {
-			totalPagesCreated = 1;
+			createNextPage();
 		}
 
 		int lastPageId = totalPagesCreated - 1;
 		int pageIndex = lastPageId % MAX_NUMBER_OF_PAGES;
 
-		ensurePageAvailable(pageIndex, lastPageId);
+		if (pages[pageIndex] == null) {
+			pages[pageIndex] = diskManager.readPageFromDisk(lastPageId);
+		}
 
 		byte[] serializedRecord = serializer.serialize(record);
 		if (!pages[pageIndex].insert(serializedRecord)) {
@@ -43,17 +45,6 @@ public class Pager {
 		if (totalPagesCreated == -1) {
 			totalPagesCreated = diskManager.getNumberOfPages();
 		}
-	}
-
-	private void ensurePageAvailable(int pageIndex, int pageId) throws IOException {
-		if (pages[pageIndex] == null) {
-			pages[pageIndex] = loadOrCreatePage(pageId);
-		}
-	}
-
-	private Page loadOrCreatePage(int pageId) throws IOException {
-		Page page = diskManager.readPageFromDisk(pageId);
-		return page == null ? new Page(pageId, serializer.RECORD_SIZE) : page;
 	}
 
 	private Page createNextPage() throws IOException {
