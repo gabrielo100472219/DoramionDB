@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.gabrielo.backend.Schema.RECORD_SIZE;
+
 public class Pager {
 
 	private static final int MAX_NUMBER_OF_PAGES = 100;
@@ -53,7 +55,7 @@ public class Pager {
 		if (pages[newPageIndex] != null) {
 			evictPage(newPageIndex);
 		}
-		pages[newPageIndex] = new Page(totalPagesCreated - 1, serializer.RECORD_SIZE);
+		pages[newPageIndex] = new Page(totalPagesCreated - 1, RECORD_SIZE);
 		return pages[newPageIndex];
 	}
 
