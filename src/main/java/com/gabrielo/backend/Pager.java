@@ -65,6 +65,23 @@ public class Pager {
 		}
 	}
 
+	public int getTotalPagesCreated() throws IOException {
+		initializeTotalPagesCreated();
+		return totalPagesCreated;
+	}
+
+	public int getRecordCountAt(int pageId) throws IOException {
+		int pageIndex = pageId % MAX_NUMBER_OF_PAGES;
+		ensurePageAvailable(pageIndex, pageId);
+		return pages[pageIndex].getRecordCount();
+	}
+
+	public Record getRecordAt(int pageId, int recordIndex) throws IOException {
+		int pageIndex = pageId % MAX_NUMBER_OF_PAGES;
+		ensurePageAvailable(pageIndex, pageId);
+		return serializer.deserialize(pages[pageIndex].getRecordAt(recordIndex));
+	}
+
 	public void flushAllPages() throws IOException {
 		for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
 			if (pages[i] != null && pages[i].isDirty()) {
