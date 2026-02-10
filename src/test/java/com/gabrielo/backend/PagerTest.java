@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,7 +37,7 @@ class PagerTest {
 
 		pager.insert(record);
 
-		assertThat(pager.getAllRecords()).isEqualTo(List.of(record));
+		assertThat(pager.getRecordAt(0, 0)).isEqualTo(record);
 	}
 
 	@Test
@@ -46,23 +45,24 @@ class PagerTest {
 	void readingRecordDoesNotDeleteIt() {
 		Record record = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
 		pager.insert(record);
-		pager.getAllRecords();
+		pager.getRecordAt(0, 0);
 
-		assertThat(pager.getAllRecords()).isEqualTo(List.of(record));
+		assertThat(pager.getRecordAt(0, 0)).isEqualTo(record);
 	}
 
 	@Test
 	@SneakyThrows
 	void insertsMultipleRecordsAndReadsThem() {
-		List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-				new Record(2, "Brielingson", "brielingson@pescao.com"),
-				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
+		Record record1 = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
+		Record record2 = new Record(2, "Brielingson", "brielingson@pescao.com");
+		Record record3 = new Record(3, "Gabrielin", "gabrielin@pescao.com");
+		pager.insert(record1);
+		pager.insert(record2);
+		pager.insert(record3);
 
-		for (Record record : recordsToInsert) {
-			pager.insert(record);
-		}
-
-		assertThat(pager.getAllRecords()).isEqualTo(recordsToInsert);
+		assertThat(pager.getRecordAt(0, 0)).isEqualTo(record1);
+		assertThat(pager.getRecordAt(0, 1)).isEqualTo(record2);
+		assertThat(pager.getRecordAt(0, 2)).isEqualTo(record3);
 	}
 
 	@Test
@@ -72,11 +72,8 @@ class PagerTest {
 			pager.insert(new Record(i, "Gabrielo" + i, "gabrielodon@pescao.com" + i));
 		}
 
-		var result = pager.getAllRecords();
-
-		assertThat(result).hasSize(RECORDS_PER_PAGE);
 		for (int i = 0; i < RECORDS_PER_PAGE; i++) {
-			assertThat(result.get(i)).isEqualTo(new Record(i, "Gabrielo" + i, "gabrielodon@pescao.com" + i));
+			assertThat(pager.getRecordAt(0, i)).isEqualTo(new Record(i, "Gabrielo" + i, "gabrielodon@pescao.com" + i));
 		}
 	}
 
@@ -90,9 +87,12 @@ class PagerTest {
 			}
 		}
 
-		var result = pager.getAllRecords();
-
-		assertThat(result).hasSize(RECORDS_PER_PAGE * numberOfPages);
+		for (int j = 0; j < numberOfPages; j++) {
+			for (int i = 0; i < RECORDS_PER_PAGE; i++) {
+				assertThat(pager.getRecordAt(j, i))
+						.isEqualTo(new Record(i, "Gabrielo" + i, "gabrielodon@pescao.com" + i));
+			}
+		}
 	}
 
 	@Test
@@ -111,10 +111,9 @@ class PagerTest {
 		Pager pager2 = new Pager(diskManager);
 		pager2.insert(new Record(3, "Gabrielin", "gabrielin@pescao.com"));
 
-		var result = pager2.getAllRecords();
-		assertThat(result).containsExactly(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-				new Record(2, "Brielingson", "brielingson@pescao.com"),
-				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 0)).isEqualTo(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 1)).isEqualTo(new Record(2, "Brielingson", "brielingson@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 2)).isEqualTo(new Record(3, "Gabrielin", "gabrielin@pescao.com"));
 	}
 
 	@Test
@@ -133,10 +132,9 @@ class PagerTest {
 		// Create new pager with same disk - simulates restart, memory is empty
 		Pager pager2 = new Pager(diskManager);
 
-		var result = pager2.getAllRecords();
-		assertThat(result).containsExactly(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-				new Record(2, "Brielingson", "brielingson@pescao.com"),
-				new Record(3, "Gabrielin", "gabrielin@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 0)).isEqualTo(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 1)).isEqualTo(new Record(2, "Brielingson", "brielingson@pescao.com"));
+		assertThat(pager2.getRecordAt(0, 2)).isEqualTo(new Record(3, "Gabrielin", "gabrielin@pescao.com"));
 	}
 
 	@Test

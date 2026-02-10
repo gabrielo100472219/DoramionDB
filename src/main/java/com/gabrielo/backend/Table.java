@@ -2,6 +2,7 @@ package com.gabrielo.backend;
 
 import lombok.SneakyThrows;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Table {
@@ -14,7 +15,12 @@ public class Table {
 
 	@SneakyThrows
 	public List<Record> getAllData() {
-		return pager.getAllRecords();
+		Cursor cursor = new Cursor(pager);
+		List<Record> records = new ArrayList<>();
+		while (cursor.hasNext()) {
+			records.add(cursor.next());
+		}
+		return records;
 	}
 
 	@SneakyThrows

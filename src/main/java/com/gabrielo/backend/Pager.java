@@ -1,8 +1,6 @@
 package com.gabrielo.backend;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.gabrielo.backend.Schema.RECORD_SIZE;
 
@@ -88,27 +86,6 @@ public class Pager {
 				diskManager.writePageToDisk(pages[i]);
 			}
 		}
-	}
-
-	public List<Record> getAllRecords() throws IOException {
-		initializeTotalPagesCreated();
-
-		List<Record> recordList = new ArrayList<>();
-		for (int i = 0; i < totalPagesCreated; i++) {
-			int pageIndex = i % MAX_NUMBER_OF_PAGES;
-			ensurePageAvailable(pageIndex, i);
-			recordList.addAll(readAllRecordsFromPageToList(pageIndex));
-		}
-		return recordList;
-	}
-
-	private List<Record> readAllRecordsFromPageToList(int pageIndex) {
-		List<Record> records = new ArrayList<>();
-		int recordsInPage = pages[pageIndex].getRecordCount();
-		for (int i = 0; i < recordsInPage; i++) {
-			records.add(serializer.deserialize(pages[pageIndex].getRecordAt(i)));
-		}
-		return records;
 	}
 
 	private void ensurePageAvailable(int pageIndex, int i) throws IOException {
