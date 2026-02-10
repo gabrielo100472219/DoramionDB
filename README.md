@@ -52,7 +52,7 @@ Aquí abandonamos el `ArrayList` y empezamos a trabajar con bytes crudos. Si a
 
 - [x] **Capa de Abstracción de Archivos:** Usar `RandomAccessFile` o `FileChannel` de Java NIO.
 
-- [ ] **El Cursor:** Implementar un objeto iterador que sepa moverse por las filas dentro de las páginas binarias.
+- [x] **El Cursor:** Implementar un objeto iterador que sepa moverse por las filas dentro de las páginas binarias.
 
 - [x] **Persistencia Básica:** Lograr que al reiniciar la app, los datos se lean del archivo `.db`.
 
