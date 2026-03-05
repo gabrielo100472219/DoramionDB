@@ -1,5 +1,7 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.disk.DiskManager;
+import com.gabrielo.backend.pager.Pager;
 import lombok.SneakyThrows;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;

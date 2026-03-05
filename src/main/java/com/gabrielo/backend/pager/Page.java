@@ -1,4 +1,4 @@
-package com.gabrielo.backend;
+package com.gabrielo.backend.pager;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

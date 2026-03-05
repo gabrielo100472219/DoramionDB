@@ -1,7 +1,7 @@
 package com.gabrielo;
 
-import com.gabrielo.backend.DiskManager;
-import com.gabrielo.backend.Pager;
+import com.gabrielo.backend.disk.DiskManager;
+import com.gabrielo.backend.pager.Pager;
 import com.gabrielo.backend.Table;
 import com.gabrielo.core.Interface;
 import com.gabrielo.core.SqlEngine;

@@ -1,5 +1,7 @@
-package com.gabrielo.backend;
+package com.gabrielo.backend.pager;
 
+import com.gabrielo.backend.Record;
+import com.gabrielo.backend.RecordSerializer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

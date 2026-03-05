@@ -1,5 +1,7 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.pager.Pager;
+
 import java.io.IOException;
 
 public class Cursor {

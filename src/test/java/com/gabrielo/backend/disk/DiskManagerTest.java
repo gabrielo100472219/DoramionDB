@@ -1,5 +1,8 @@
-package com.gabrielo.backend;
+package com.gabrielo.backend.disk;
 
+import com.gabrielo.backend.Record;
+import com.gabrielo.backend.RecordSerializer;
+import com.gabrielo.backend.pager.Page;
 import lombok.SneakyThrows;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.Test;

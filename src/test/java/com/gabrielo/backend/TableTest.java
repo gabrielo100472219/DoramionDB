@@ -1,5 +1,7 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.disk.DiskManager;
+import com.gabrielo.backend.pager.Pager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

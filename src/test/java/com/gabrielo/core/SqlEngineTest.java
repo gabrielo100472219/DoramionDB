@@ -1,7 +1,7 @@
 package com.gabrielo.core;
 
-import com.gabrielo.backend.DiskManager;
-import com.gabrielo.backend.Pager;
+import com.gabrielo.backend.disk.DiskManager;
+import com.gabrielo.backend.pager.Pager;
 import com.gabrielo.backend.Record;
 import com.gabrielo.backend.Table;
 import org.junit.jupiter.api.Test;

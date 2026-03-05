@@ -1,4 +1,9 @@
-package com.gabrielo.backend;
+package com.gabrielo.backend.pager;
+
+import com.gabrielo.backend.Record;
+import com.gabrielo.backend.RecordSerializer;
+import com.gabrielo.backend.Schema;
+import com.gabrielo.backend.disk.DiskManager;
 
 import java.io.IOException;
 

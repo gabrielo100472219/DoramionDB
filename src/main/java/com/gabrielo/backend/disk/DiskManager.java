@@ -1,4 +1,6 @@
-package com.gabrielo.backend;
+package com.gabrielo.backend.disk;
+
+import com.gabrielo.backend.pager.Page;
 
 import static com.gabrielo.backend.Schema.RECORD_SIZE;
 
@@ -14,8 +16,8 @@ public class DiskManager {
 
   private final int pageSize;
 
-  // Page number of records
-  private static final int PAGE_METADATA_SIZE = Integer.BYTES;
+  // Page id + Page number of records
+  private static final int PAGE_METADATA_SIZE = 2 * Integer.BYTES;
 
   private static final int METADATA_SIZE = Integer.BYTES;
 

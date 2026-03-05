@@ -1,5 +1,6 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.pager.Pager;
 import lombok.SneakyThrows;
 
 import java.util.ArrayList;
