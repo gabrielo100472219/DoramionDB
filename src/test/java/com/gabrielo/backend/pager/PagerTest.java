@@ -288,4 +288,97 @@ class PagerTest {
       assertThat(result).isEqualTo(expectedInSecondPage);
     }
   }
+
+  @Nested
+  class AllocateNewPage {
+
+    @Test
+    @SneakyThrows
+    void allocatesPageWithIdZeroWhenEmpty() {
+      Page page = pager.allocateNewPage();
+
+      assertThat(page.getId()).isZero();
+    }
+
+    @Test
+    @SneakyThrows
+    void allocatesPageWithIncrementingIds() {
+      Page page0 = pager.allocateNewPage();
+      Page page1 = pager.allocateNewPage();
+      Page page2 = pager.allocateNewPage();
+
+      assertThat(page0.getId()).isEqualTo(0);
+      assertThat(page1.getId()).isEqualTo(1);
+      assertThat(page2.getId()).isEqualTo(2);
+    }
+
+    @Test
+    @SneakyThrows
+    void allocatedPageHasCleanBuffer() {
+      Page page = pager.allocateNewPage();
+
+      byte[] allBytes = page.getBuffer().array();
+      for (byte b : allBytes) {
+        assertThat(b).isZero();
+      }
+    }
+
+    @Test
+    @SneakyThrows
+    void increasesTotalPagesCreated() {
+      assertThat(pager.getTotalPagesCreated()).isZero();
+
+      pager.allocateNewPage();
+      assertThat(pager.getTotalPagesCreated()).isEqualTo(1);
+
+      pager.allocateNewPage();
+      assertThat(pager.getTotalPagesCreated()).isEqualTo(2);
+    }
+  }
+
+  @Nested
+  class GetPage {
+
+    @Test
+    @SneakyThrows
+    void returnsAllocatedPage() {
+      Page allocated = pager.allocateNewPage();
+
+      Page retrieved = pager.getPage(0);
+
+      assertThat(retrieved).isSameAs(allocated);
+    }
+
+    @Test
+    @SneakyThrows
+    void returnsCorrectPageById() {
+      pager.allocateNewPage();
+      Page page1 = pager.allocateNewPage();
+      pager.allocateNewPage();
+
+      Page retrieved = pager.getPage(1);
+
+      assertThat(retrieved.getId()).isEqualTo(1);
+      assertThat(retrieved).isSameAs(page1);
+    }
+
+    @Test
+    @SneakyThrows
+    void loadsPageFromDiskWhenNotInCache() {
+      Path dbFile = tempDir.resolve("getpage_disk.ddb");
+      DiskManager diskManager = new DiskManager(dbFile, PAGE_SIZE);
+      Pager pager1 = new Pager(diskManager);
+
+      // Allocate and insert some data using old API so it has content
+      pager1.insert(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
+      pager1.flushAllPages();
+
+      // New pager, empty cache
+      Pager pager2 = new Pager(diskManager);
+      Page loaded = pager2.getPage(0);
+
+      assertThat(loaded).isNotNull();
+      assertThat(loaded.getId()).isZero();
+    }
+  }
 }

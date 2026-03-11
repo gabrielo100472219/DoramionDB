@@ -32,6 +32,10 @@ public class Page {
 		this.dirty = false;
 	}
 
+	public void markDirty() {
+		this.dirty = true;
+	}
+
 	public boolean insert(byte[] recordData) {
 		if (isFull()) {
 			return false;

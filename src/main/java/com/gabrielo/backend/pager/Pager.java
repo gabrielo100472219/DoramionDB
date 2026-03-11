@@ -24,6 +24,12 @@ public class Pager {
     this.diskManager = diskManager;
   }
 
+  public Page getPage(int id) throws IOException {
+    int pageIndex = id % MAX_NUMBER_OF_PAGES;
+    ensurePageAvailable(pageIndex, id);
+    return pages[pageIndex];
+  }
+
   public void insert(Record record) throws IOException {
     initializeTotalPagesCreated();
 
@@ -65,6 +71,18 @@ public class Pager {
     if (pages[pageIndex] != null && pages[pageIndex].isDirty()) {
       diskManager.writePageToDisk(pages[pageIndex]);
     }
+  }
+
+  public Page allocateNewPage() throws IOException {
+    initializeTotalPagesCreated();
+    int newPageId = totalPagesCreated;
+    totalPagesCreated++;
+    int pageIndex = newPageId % MAX_NUMBER_OF_PAGES;
+    if (pages[pageIndex] != null) {
+      evictPage(pageIndex);
+    }
+    pages[pageIndex] = new Page(newPageId, RECORD_SIZE);
+    return pages[pageIndex];
   }
 
   public int getTotalPagesCreated() throws IOException {
