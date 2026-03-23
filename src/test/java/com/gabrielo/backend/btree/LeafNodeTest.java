@@ -104,4 +104,58 @@ public class LeafNodeTest {
     assertThat(leafNode.getNumCells()).isEqualTo(56);
     assertThat(leafNode.isFull()).isTrue();
   }
+
+  @Test
+  void splitDividesCellsEvenly() {
+    for (int i = 1; i <= 56; i++) {
+      Record r = new Record(i, "Name" + i, "email" + i + "@mail.com");
+      leafNode.insert(r.id(), serializer.serialize(r));
+    }
+
+    Page rightPage = new Page(1, recordSize);
+    int splitKey = leafNode.split(rightPage);
+    LeafNode rightNode = new LeafNode(rightPage);
+
+    assertThat(leafNode.getNumCells()).isEqualTo(28);
+    assertThat(rightNode.getNumCells()).isEqualTo(28);
+    assertThat(splitKey).isEqualTo(29);
+  }
+
+  @Test
+  void splitPreservesAllRecords() {
+    for (int i = 1; i <= 56; i++) {
+      Record r = new Record(i, "Name" + i, "email" + i + "@mail.com");
+      leafNode.insert(r.id(), serializer.serialize(r));
+    }
+
+    Page rightPage = new Page(1, recordSize);
+    leafNode.split(rightPage);
+    LeafNode rightNode = new LeafNode(rightPage);
+
+    // Left leaf has keys 1..28
+    for (int i = 0; i < 28; i++) {
+      assertThat(leafNode.getKey(i)).isEqualTo(i + 1);
+    }
+    // Right leaf has keys 29..56
+    for (int i = 0; i < 28; i++) {
+      assertThat(rightNode.getKey(i)).isEqualTo(i + 29);
+    }
+  }
+
+  @Test
+  void splitUpdatesSiblingLinkedList() {
+    for (int i = 1; i <= 56; i++) {
+      Record r = new Record(i, "Name" + i, "email" + i + "@mail.com");
+      leafNode.insert(r.id(), serializer.serialize(r));
+    }
+
+    Page rightPage = new Page(1, recordSize);
+    leafNode.split(rightPage);
+    LeafNode rightNode = new LeafNode(rightPage);
+
+    // Left's next points to right
+    assertThat(leafNode.getNextLeafPageId()).isEqualTo(1);
+    // Right's next is -1 (no further sibling)
+    assertThat(rightNode.getNextLeafPageId()).isEqualTo(-1);
+  }
 }

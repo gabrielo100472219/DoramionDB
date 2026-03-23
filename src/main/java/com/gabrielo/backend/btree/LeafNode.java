@@ -23,11 +23,31 @@ public class LeafNode {
 
   public void initialize() {
     ByteBuffer buffer = page.getBuffer();
-    buffer.put(0, (byte) 0); // nodeType: 0 = leaf
+    buffer.put(0, NodeLayout.NODE_TYPE_LEAF);
     buffer.put(1, (byte) 0); // isRoot: 0 = false
     buffer.putInt(2, 0); // parentPageId: 0
     buffer.putInt(6, 0); // numCells: 0
     buffer.putInt(10, -1); // nextLeafPageId: -1 (no sibling)
+  }
+
+  public int getPageId() {
+    return page.getId();
+  }
+
+  public int getParentPageId() {
+    return page.getBuffer().getInt(2);
+  }
+
+  public void setParentPageId(int pageId) {
+    page.getBuffer().putInt(2, pageId);
+  }
+
+  public int getNextLeafPageId() {
+    return page.getBuffer().getInt(10);
+  }
+
+  public void setNextLeafPageId(int pageId) {
+    page.getBuffer().putInt(10, pageId);
   }
 
   public int getNumCells() {
@@ -105,5 +125,51 @@ public class LeafNode {
     int numberOfCells = page.getBuffer().getInt(6);
     int numberOfCellsFittingNode = (page.getSize() - LEAF_HEADER_SIZE) / CELL_SIZE;
     return numberOfCells >= numberOfCellsFittingNode;
+  }
+
+  /**
+   * Split this leaf node, moving the upper half of cells to the newPage.
+   * Updates the sibling linked list (nextLeafPageId).
+   * Returns the first key of the new right leaf (the split key to promote).
+   */
+  public int split(Page newPage) {
+    LeafNode rightNode = new LeafNode(newPage);
+    rightNode.initialize();
+
+    int totalCells = getNumCells();
+    int splitIndex = totalCells / 2;
+
+    ByteBuffer srcBuffer = page.getBuffer();
+    ByteBuffer destBuffer = newPage.getBuffer();
+
+    // Copy upper half cells to the new leaf
+    for (int i = splitIndex; i < totalCells; i++) {
+      int srcOffset = LEAF_HEADER_SIZE + (i * CELL_SIZE);
+      int destIndex = i - splitIndex;
+      int destOffset = LEAF_HEADER_SIZE + (destIndex * CELL_SIZE);
+      byte[] cell = new byte[CELL_SIZE];
+      srcBuffer.get(srcOffset, cell);
+      destBuffer.put(destOffset, cell);
+    }
+
+    int rightCells = totalCells - splitIndex;
+    rightNode.setNumCells(rightCells);
+
+    // Update sibling linked list: newRight.next = this.next; this.next = newRight
+    rightNode.setNextLeafPageId(getNextLeafPageId());
+    setNextLeafPageId(newPage.getId());
+
+    // Shrink this leaf to only keep the lower half
+    setNumCells(splitIndex);
+
+    newPage.markDirty();
+    page.markDirty();
+
+    // Return the split key (first key of the right leaf)
+    return rightNode.getKey(0);
+  }
+
+  private void setNumCells(int numCells) {
+    page.getBuffer().putInt(NodeLayout.COMMON_HEADER_SIZE, numCells);
   }
 }

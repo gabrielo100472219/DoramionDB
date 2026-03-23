@@ -28,6 +28,19 @@ public class NodeLayout {
   public static final int NUM_KEYS_SIZE = 4;
   public static final int RIGHT_CHILD_PAGE_ID_SIZE = 4;
 
+  public static final int INTERNAL_HEADER_SIZE = COMMON_HEADER_SIZE + NUM_KEYS_SIZE + RIGHT_CHILD_PAGE_ID_SIZE;
+
+  // Internal node child entry: [childPageId (4 bytes)] [key (4 bytes)]
+  public static final int CHILD_PAGE_ID_SIZE = 4;
+  public static final int INTERNAL_CHILD_SIZE = CHILD_PAGE_ID_SIZE + CELL_KEY_SIZE;
+
+  // Internal node capacity
+  public static final int INTERNAL_MAX_KEYS = (PAGE_SIZE - INTERNAL_HEADER_SIZE) / INTERNAL_CHILD_SIZE;
+
+  // Node type constants
+  public static final byte NODE_TYPE_LEAF = 0;
+  public static final byte NODE_TYPE_INTERNAL = 1;
+
   private NodeLayout() {
   }
 }

@@ -1,42 +1,171 @@
 package com.gabrielo.backend.btree;
 
+import java.io.IOException;
+
 import com.gabrielo.backend.pager.Page;
 import com.gabrielo.backend.pager.Pager;
-
-import java.io.IOException;
 
 public class BTree {
 
   private final Pager pager;
 
-  private int rootPageId = 0;
-
-  private boolean rootExists = false;
+  private int rootPageId = -1;
 
   public BTree(Pager pager) {
     this.pager = pager;
   }
 
   public void insert(int key, byte[] record) throws IOException {
-    if (!rootExists) {
+    if (rootPageId == -1) {
       Page root = pager.allocateNewPage();
       rootPageId = root.getId();
-      rootExists = true;
       LeafNode leafNode = new LeafNode(root);
       leafNode.initialize();
     }
-    Page root = pager.getPage(rootPageId);
-    LeafNode leafNode = new LeafNode(root);
+
+    Page leafPage = findLeafPage(key);
+    LeafNode leafNode = new LeafNode(leafPage);
     leafNode.insert(key, record);
-    root.markDirty();
+    leafPage.markDirty();
+
+    if (leafNode.isFull()) {
+      splitLeaf(leafNode, leafPage);
+    }
+  }
+
+  private Page findLeafPage(int key) throws IOException {
+    Page current = pager.getPage(rootPageId);
+    while (true) {
+      byte nodeType = current.getBuffer().get(0);
+      if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
+        return current;
+      }
+      InternalNode internalNode = new InternalNode(current);
+      int childPageId = internalNode.findChild(key);
+      current = pager.getPage(childPageId);
+    }
+  }
+
+  private void splitLeaf(LeafNode leafNode, Page leafPage) throws IOException {
+    Page newPage = pager.allocateNewPage();
+    int splitKey = leafNode.split(newPage);
+    int leftPageId = leafPage.getId();
+    int rightPageId = newPage.getId();
+
+    if (leftPageId == rootPageId) {
+      // The leaf being split is the root — create a new internal root
+      Page newRootPage = pager.allocateNewPage();
+      InternalNode newRoot = new InternalNode(newRootPage);
+      newRoot.initialize();
+      newRoot.insert(splitKey, leftPageId, rightPageId);
+      rootPageId = newRootPage.getId();
+
+      leafNode.setParentPageId(rootPageId);
+      new LeafNode(newPage).setParentPageId(rootPageId);
+
+      newRootPage.markDirty();
+    } else {
+      // Insert the split key into the existing parent internal node
+      int parentPageId = leafNode.getParentPageId();
+      Page parentPage = pager.getPage(parentPageId);
+      InternalNode parentNode = new InternalNode(parentPage);
+
+      new LeafNode(newPage).setParentPageId(parentPageId);
+      parentNode.insert(splitKey, leftPageId, rightPageId);
+      parentPage.markDirty();
+
+      if (parentNode.isFull()) {
+        splitInternal(parentNode, parentPage);
+      }
+    }
+  }
+
+  private void splitInternal(InternalNode node, Page nodePage) throws IOException {
+    Page newPage = pager.allocateNewPage();
+    InternalNode newRight = new InternalNode(newPage);
+    newRight.initialize();
+
+    int totalKeys = node.getNumKeys();
+    int midIndex = totalKeys / 2;
+    int splitKey = node.getKey(midIndex);
+
+    // Copy keys and children from midIndex+1..totalKeys-1 to the new right node
+    // The key at midIndex is promoted up, not kept in either node
+    for (int i = midIndex + 1; i < totalKeys; i++) {
+      newRight.insert(node.getKey(i), node.getChildPageId(i), node.getRightChildPageId());
+    }
+
+    newRight = new InternalNode(newPage);
+    newRight.initialize();
+
+    int originalRightChild = node.getRightChildPageId();
+
+    for (int i = midIndex + 1; i < totalKeys; i++) {
+      int childPageId = node.getChildPageId(i);
+      int k = node.getKey(i);
+      newRight.insertEntry(i - midIndex - 1, k, childPageId);
+    }
+    newRight.setRightChildPageId(originalRightChild);
+    newRight.setNumKeysDirectly(totalKeys - midIndex - 1);
+
+    // Update parent pointers for children that moved to the right node
+    for (int i = midIndex + 1; i < totalKeys; i++) {
+      updateChildParent(node.getChildPageId(i), newPage.getId());
+    }
+    updateChildParent(originalRightChild, newPage.getId());
+
+    node.setRightChildPageId(node.getChildPageId(midIndex));
+    node.setNumKeysDirectly(midIndex);
+
+    int leftPageId = nodePage.getId();
+    int rightPageId = newPage.getId();
+
+    newPage.markDirty();
+    nodePage.markDirty();
+
+    if (leftPageId == rootPageId) {
+      Page newRootPage = pager.allocateNewPage();
+      InternalNode newRoot = new InternalNode(newRootPage);
+      newRoot.initialize();
+      newRoot.insert(splitKey, leftPageId, rightPageId);
+      rootPageId = newRootPage.getId();
+
+      node.setParentPageId(rootPageId);
+      newRight.setParentPageId(rootPageId);
+      newRootPage.markDirty();
+      return;
+    }
+
+    int parentPageId = node.getParentPageId();
+    Page parentPage = pager.getPage(parentPageId);
+    InternalNode parentNode = new InternalNode(parentPage);
+
+    newRight.setParentPageId(parentPageId);
+    parentNode.insert(splitKey, leftPageId, rightPageId);
+    parentPage.markDirty();
+
+    if (parentNode.isFull()) {
+      splitInternal(parentNode, parentPage);
+    }
+  }
+
+  private void updateChildParent(int childPageId, int newParentPageId) throws IOException {
+    Page childPage = pager.getPage(childPageId);
+    byte nodeType = childPage.getBuffer().get(0);
+    if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
+      new LeafNode(childPage).setParentPageId(newParentPageId);
+    } else {
+      new InternalNode(childPage).setParentPageId(newParentPageId);
+    }
+    childPage.markDirty();
   }
 
   public byte[] search(int key) throws IOException {
-    if (!rootExists) {
+    if (rootPageId == -1) {
       return null;
     }
-    Page page = pager.getPage(rootPageId);
-    LeafNode leafNode = new LeafNode(page);
+    Page leafPage = findLeafPage(key);
+    LeafNode leafNode = new LeafNode(leafPage);
     int cellIndex = leafNode.findCell(key);
     if (cellIndex == -1) {
       return null;
