@@ -122,6 +122,42 @@ class DiskManagerTest {
     assertThat(loaded.getBuffer().getInt(0)).isEqualTo(2);
   }
 
+  @Test
+  @SneakyThrows
+  void defaultRootPageIdIsMinusOne(@TempDir Path tempDir) {
+    Path testFile = tempDir.resolve("test.ddb");
+    DiskManager diskManager = new DiskManager(testFile, pageSize);
+
+    assertThat(diskManager.readRootPageId()).isEqualTo(-1);
+  }
+
+  @Test
+  @SneakyThrows
+  void writesAndReadsRootPageId(@TempDir Path tempDir) {
+    Path testFile = tempDir.resolve("test.ddb");
+    DiskManager diskManager = new DiskManager(testFile, pageSize);
+
+    diskManager.writeRootPageId(5);
+
+    assertThat(diskManager.readRootPageId()).isEqualTo(5);
+  }
+
+  @Test
+  @SneakyThrows
+  void rootPageIdSurvivesPageWrites(@TempDir Path tempDir) {
+    Path testFile = tempDir.resolve("test.ddb");
+    DiskManager diskManager = new DiskManager(testFile, pageSize);
+
+    diskManager.writeRootPageId(3);
+
+    Page page = new Page(0);
+    page.getBuffer().putInt(0, 42);
+    diskManager.writePageToDisk(page);
+
+    assertThat(diskManager.readRootPageId()).isEqualTo(3);
+    assertThat(diskManager.getNumberOfPages()).isEqualTo(1);
+  }
+
   private RecursiveComparisonConfiguration getPageComparisonConfig() {
     return RecursiveComparisonConfiguration.builder().withEqualsForType((actual, expected) -> {
       actual.rewind();

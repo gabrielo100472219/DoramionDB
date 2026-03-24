@@ -4,6 +4,7 @@ import com.gabrielo.backend.btree.BTree;
 import com.gabrielo.backend.pager.Pager;
 import lombok.SneakyThrows;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,16 @@ public class Table {
 	public Table(Pager pager, BTree bTree) {
 		this.pager = pager;
 		this.bTree = bTree;
+	}
+
+	public void open() throws IOException {
+		int rootPageId = pager.readRootPageId();
+		bTree.setRootPageId(rootPageId);
+	}
+
+	public void close() throws IOException {
+		pager.writeRootPageId(bTree.getRootPageId());
+		pager.flushAllPages();
 	}
 
 	@SneakyThrows

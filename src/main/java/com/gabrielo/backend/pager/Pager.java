@@ -44,6 +44,14 @@ public class Pager {
     }
   }
 
+  public int readRootPageId() throws IOException {
+    return diskManager.readRootPageId();
+  }
+
+  public void writeRootPageId(int rootPageId) throws IOException {
+    diskManager.writeRootPageId(rootPageId);
+  }
+
   private void initializeTotalPagesCreated() throws IOException {
     if (totalPagesCreated == -1) {
       totalPagesCreated = diskManager.getNumberOfPages();

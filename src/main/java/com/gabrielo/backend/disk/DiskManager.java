@@ -16,7 +16,9 @@ public class DiskManager {
 
   private static final int PAGE_ID_SIZE = Integer.BYTES;
 
-  private static final int METADATA_SIZE = Integer.BYTES;
+  private static final int ROOT_PAGE_ID_SIZE = Integer.BYTES;
+
+  private static final int METADATA_SIZE = Integer.BYTES + ROOT_PAGE_ID_SIZE;
 
   public DiskManager(Path filePath, int pageSize) {
     this.filePath = filePath;
@@ -36,6 +38,37 @@ public class DiskManager {
     }
   }
 
+  public int readRootPageId() throws IOException {
+    try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ,
+        StandardOpenOption.WRITE)) {
+
+      if (channel.size() == 0) {
+        initializeMetadata(channel);
+        return -1;
+      }
+
+      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+      channel.read(buffer, Integer.BYTES); // offset 4: rootPageId
+      buffer.flip();
+      return buffer.getInt();
+    }
+  }
+
+  public void writeRootPageId(int rootPageId) throws IOException {
+    try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ,
+        StandardOpenOption.WRITE)) {
+
+      if (channel.size() == 0) {
+        initializeMetadata(channel);
+      }
+
+      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+      buffer.putInt(rootPageId);
+      buffer.flip();
+      channel.write(buffer, Integer.BYTES); // offset 4: rootPageId
+    }
+  }
+
   private static int readNumberOfPagesFromMetadata(FileChannel channel) throws IOException {
     ByteBuffer buffer = ByteBuffer.allocate(4);
     channel.read(buffer, 0);
@@ -45,7 +78,8 @@ public class DiskManager {
 
   private void initializeMetadata(FileChannel channel) throws IOException {
     ByteBuffer buffer = ByteBuffer.allocate(METADATA_SIZE);
-    buffer.putInt(0);
+    buffer.putInt(0);  // numPages
+    buffer.putInt(-1); // rootPageId (-1 = no root)
     buffer.flip();
     channel.write(buffer, 0);
   }
@@ -97,7 +131,7 @@ public class DiskManager {
   }
 
   private void increaseNumberOfPagesToMetadata(int numberOfPages, FileChannel channel) throws IOException {
-    ByteBuffer metadataBuffer = ByteBuffer.allocate(METADATA_SIZE);
+    ByteBuffer metadataBuffer = ByteBuffer.allocate(Integer.BYTES);
     metadataBuffer.putInt(numberOfPages + 1);
     metadataBuffer.flip();
     channel.write(metadataBuffer, 0);

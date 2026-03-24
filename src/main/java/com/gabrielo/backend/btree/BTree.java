@@ -155,6 +155,10 @@ public class BTree {
     return rootPageId;
   }
 
+  public void setRootPageId(int rootPageId) {
+    this.rootPageId = rootPageId;
+  }
+
   public int getLeftMostLeafPageId() throws IOException {
     if (rootPageId == -1) {
       return -1;

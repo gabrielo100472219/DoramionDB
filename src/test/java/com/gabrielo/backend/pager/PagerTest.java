@@ -150,4 +150,22 @@ class PagerTest {
       assertThat(loaded.getBuffer().getInt(0)).isEqualTo(99);
     }
   }
+
+  @Nested
+  class RootPageId {
+
+    @Test
+    @SneakyThrows
+    void readsDefaultRootPageIdAsMinusOne() {
+      assertThat(pager.readRootPageId()).isEqualTo(-1);
+    }
+
+    @Test
+    @SneakyThrows
+    void writesAndReadsRootPageId() {
+      pager.writeRootPageId(7);
+
+      assertThat(pager.readRootPageId()).isEqualTo(7);
+    }
+  }
 }

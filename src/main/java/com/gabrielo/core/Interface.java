@@ -6,15 +6,24 @@ public class Interface {
 
   private final Scanner scanner;
   private final SqlEngine engine;
+  private final Runnable onExit;
 
   public Interface(SqlEngine engine) {
-    this.scanner = new Scanner(System.in);
-    this.engine = engine;
+    this(new Scanner(System.in), engine, () -> {});
+  }
+
+  public Interface(SqlEngine engine, Runnable onExit) {
+    this(new Scanner(System.in), engine, onExit);
   }
 
   public Interface(Scanner scanner, SqlEngine engine) {
+    this(scanner, engine, () -> {});
+  }
+
+  public Interface(Scanner scanner, SqlEngine engine, Runnable onExit) {
     this.scanner = scanner;
     this.engine = engine;
+    this.onExit = onExit;
   }
 
   public void runDatabaseEngine() {
@@ -24,6 +33,7 @@ public class Interface {
       System.out.print("> ");
       final String input = this.scanner.nextLine().trim();
       if (input.equals(".exit")) {
+        onExit.run();
         break;
       }
       final SqlExecutionResult result = this.engine.executeStatement(input);
