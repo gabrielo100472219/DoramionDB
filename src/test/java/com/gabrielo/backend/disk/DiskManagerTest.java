@@ -1,14 +1,11 @@
 package com.gabrielo.backend.disk;
 
-import com.gabrielo.backend.pager.Page;
 import lombok.SneakyThrows;
-import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,13 +40,11 @@ class DiskManagerTest {
   void writesAndReadsOneEmptyPage(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    Page page = new Page(0);
+    byte[] buffer = new byte[pageSize];
 
-    diskManager.writePageToDisk(page);
+    diskManager.writePageToDisk(0, buffer);
 
-    assertThat(diskManager.readPageFromDisk(0))
-        .usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(page);
+    assertThat(diskManager.readPageFromDisk(0)).isEqualTo(buffer);
   }
 
   @Test
@@ -57,16 +52,13 @@ class DiskManagerTest {
   void writesAndReadsMultipleEmptyPages(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    List<Page> pages = List.of(new Page(0), new Page(1), new Page(2));
 
-    for (Page page : pages) {
-      diskManager.writePageToDisk(page);
+    for (int i = 0; i < 3; i++) {
+      diskManager.writePageToDisk(i, new byte[pageSize]);
     }
 
-    for (int i = 0; i < pages.size(); i++) {
-      assertThat(diskManager.readPageFromDisk(i))
-          .usingRecursiveComparison(getPageComparisonConfig())
-          .isEqualTo(pages.get(i));
+    for (int i = 0; i < 3; i++) {
+      assertThat(diskManager.readPageFromDisk(i)).isEqualTo(new byte[pageSize]);
     }
   }
 
@@ -75,15 +67,15 @@ class DiskManagerTest {
   void writesAndReadsPageWithData(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    Page page = new Page(0);
-    page.getBuffer().putInt(0, 42);
-    page.getBuffer().putInt(100, 999);
+    byte[] buffer = new byte[pageSize];
+    ByteBuffer.wrap(buffer).putInt(0, 42);
+    ByteBuffer.wrap(buffer).putInt(100, 999);
 
-    diskManager.writePageToDisk(page);
+    diskManager.writePageToDisk(0, buffer);
 
-    Page loaded = diskManager.readPageFromDisk(0);
-    assertThat(loaded.getBuffer().getInt(0)).isEqualTo(42);
-    assertThat(loaded.getBuffer().getInt(100)).isEqualTo(999);
+    byte[] loaded = diskManager.readPageFromDisk(0);
+    assertThat(ByteBuffer.wrap(loaded).getInt(0)).isEqualTo(42);
+    assertThat(ByteBuffer.wrap(loaded).getInt(100)).isEqualTo(999);
   }
 
   @Test
@@ -93,14 +85,14 @@ class DiskManagerTest {
     DiskManager diskManager = new DiskManager(testFile, pageSize);
 
     for (int i = 0; i < 3; i++) {
-      Page page = new Page(i);
-      page.getBuffer().putInt(0, i * 100);
-      diskManager.writePageToDisk(page);
+      byte[] buffer = new byte[pageSize];
+      ByteBuffer.wrap(buffer).putInt(0, i * 100);
+      diskManager.writePageToDisk(i, buffer);
     }
 
     for (int i = 0; i < 3; i++) {
-      Page loaded = diskManager.readPageFromDisk(i);
-      assertThat(loaded.getBuffer().getInt(0)).isEqualTo(i * 100);
+      byte[] loaded = diskManager.readPageFromDisk(i);
+      assertThat(ByteBuffer.wrap(loaded).getInt(0)).isEqualTo(i * 100);
     }
   }
 
@@ -110,16 +102,16 @@ class DiskManagerTest {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
 
-    Page page = new Page(0);
-    page.getBuffer().putInt(0, 1);
-    diskManager.writePageToDisk(page);
+    byte[] buffer = new byte[pageSize];
+    ByteBuffer.wrap(buffer).putInt(0, 1);
+    diskManager.writePageToDisk(0, buffer);
 
-    page.getBuffer().putInt(0, 2);
-    diskManager.writePageToDisk(page);
+    ByteBuffer.wrap(buffer).putInt(0, 2);
+    diskManager.writePageToDisk(0, buffer);
 
     assertThat(diskManager.getNumberOfPages()).isEqualTo(1);
-    Page loaded = diskManager.readPageFromDisk(0);
-    assertThat(loaded.getBuffer().getInt(0)).isEqualTo(2);
+    byte[] loaded = diskManager.readPageFromDisk(0);
+    assertThat(ByteBuffer.wrap(loaded).getInt(0)).isEqualTo(2);
   }
 
   @Test
@@ -150,19 +142,11 @@ class DiskManagerTest {
 
     diskManager.writeRootPageId(3);
 
-    Page page = new Page(0);
-    page.getBuffer().putInt(0, 42);
-    diskManager.writePageToDisk(page);
+    byte[] buffer = new byte[pageSize];
+    ByteBuffer.wrap(buffer).putInt(0, 42);
+    diskManager.writePageToDisk(0, buffer);
 
     assertThat(diskManager.readRootPageId()).isEqualTo(3);
     assertThat(diskManager.getNumberOfPages()).isEqualTo(1);
-  }
-
-  private RecursiveComparisonConfiguration getPageComparisonConfig() {
-    return RecursiveComparisonConfiguration.builder().withEqualsForType((actual, expected) -> {
-      actual.rewind();
-      expected.rewind();
-      return actual.equals(expected);
-    }, ByteBuffer.class).build();
   }
 }

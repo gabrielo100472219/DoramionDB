@@ -4,13 +4,9 @@ import java.nio.ByteBuffer;
 
 import com.gabrielo.backend.pager.Page;
 
-public class InternalNode {
+public final class InternalNode implements Node {
 
   private final Page page;
-
-  private static final int NUM_KEYS_OFFSET = NodeLayout.COMMON_HEADER_SIZE;
-
-  private static final int RIGHT_CHILD_OFFSET = NUM_KEYS_OFFSET + NodeLayout.NUM_KEYS_SIZE;
 
   public InternalNode(Page page) {
     this.page = page;
@@ -18,35 +14,35 @@ public class InternalNode {
 
   public void initialize() {
     ByteBuffer buffer = page.getBuffer();
-    buffer.put(0, NodeLayout.NODE_TYPE_INTERNAL);
-    buffer.put(1, (byte) 0); // isRoot: false
-    buffer.putInt(2, 0); // parentPageId
-    buffer.putInt(NUM_KEYS_OFFSET, 0); // numKeys
-    buffer.putInt(RIGHT_CHILD_OFFSET, -1); // rightChildPageId
+    buffer.put(NodeLayout.NODE_TYPE_OFFSET, NodeLayout.NODE_TYPE_INTERNAL);
+    buffer.put(NodeLayout.IS_ROOT_OFFSET, (byte) 0);
+    buffer.putInt(NodeLayout.PARENT_PAGE_ID_OFFSET, 0);
+    buffer.putInt(NodeLayout.NUM_KEYS_OFFSET, 0);
+    buffer.putInt(NodeLayout.RIGHT_CHILD_PAGE_ID_OFFSET, -1);
   }
 
   public int getNumKeys() {
-    return page.getBuffer().getInt(NUM_KEYS_OFFSET);
+    return page.getBuffer().getInt(NodeLayout.NUM_KEYS_OFFSET);
   }
 
   private void setNumKeys(int numKeys) {
-    page.getBuffer().putInt(NUM_KEYS_OFFSET, numKeys);
+    page.getBuffer().putInt(NodeLayout.NUM_KEYS_OFFSET, numKeys);
   }
 
   public int getRightChildPageId() {
-    return page.getBuffer().getInt(RIGHT_CHILD_OFFSET);
+    return page.getBuffer().getInt(NodeLayout.RIGHT_CHILD_PAGE_ID_OFFSET);
   }
 
   public void setRightChildPageId(int pageId) {
-    page.getBuffer().putInt(RIGHT_CHILD_OFFSET, pageId);
+    page.getBuffer().putInt(NodeLayout.RIGHT_CHILD_PAGE_ID_OFFSET, pageId);
   }
 
   public int getParentPageId() {
-    return page.getBuffer().getInt(2);
+    return page.getBuffer().getInt(NodeLayout.PARENT_PAGE_ID_OFFSET);
   }
 
   public void setParentPageId(int pageId) {
-    page.getBuffer().putInt(2, pageId);
+    page.getBuffer().putInt(NodeLayout.PARENT_PAGE_ID_OFFSET, pageId);
   }
 
   private int entryOffset(int index) {

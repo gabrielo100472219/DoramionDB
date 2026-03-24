@@ -39,7 +39,7 @@ public class Pager {
   public void flushAllPages() throws IOException {
     for (int i = 0; i < MAX_NUMBER_OF_PAGES; i++) {
       if (pages[i] != null && pages[i].isDirty()) {
-        diskManager.writePageToDisk(pages[i]);
+        diskManager.writePageToDisk(pages[i].getId(), pages[i].getBuffer().array());
       }
     }
   }
@@ -60,18 +60,28 @@ public class Pager {
 
   private void evictPage(int pageIndex) throws IOException {
     if (pages[pageIndex] != null && pages[pageIndex].isDirty()) {
-      diskManager.writePageToDisk(pages[pageIndex]);
+      diskManager.writePageToDisk(pages[pageIndex].getId(), pages[pageIndex].getBuffer().array());
     }
   }
 
   private void ensurePageAvailable(int pageIndex, int id) throws IOException {
     if (pages[pageIndex] == null) {
-      pages[pageIndex] = diskManager.readPageFromDisk(id);
+      pages[pageIndex] = loadPageFromDisk(id);
     }
 
     if (pages[pageIndex].getId() != id) {
       evictPage(pageIndex);
-      pages[pageIndex] = diskManager.readPageFromDisk(id);
+      pages[pageIndex] = loadPageFromDisk(id);
     }
+  }
+
+  private Page loadPageFromDisk(int id) throws IOException {
+    byte[] data = diskManager.readPageFromDisk(id);
+    if (data == null) {
+      return null;
+    }
+    Page page = new Page(id);
+    page.getBuffer().put(0, data);
+    return page;
   }
 }

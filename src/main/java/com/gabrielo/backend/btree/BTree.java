@@ -36,11 +36,11 @@ public class BTree {
   private Page findLeafPage(int key) throws IOException {
     Page current = pager.getPage(rootPageId);
     while (true) {
-      byte nodeType = current.getBuffer().get(0);
-      if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
+      Node node = Node.from(current);
+      if (node instanceof LeafNode) {
         return current;
       }
-      InternalNode internalNode = new InternalNode(current);
+      InternalNode internalNode = (InternalNode) node;
       int childPageId = internalNode.findChild(key);
       current = pager.getPage(childPageId);
     }
@@ -142,12 +142,8 @@ public class BTree {
 
   private void updateChildParent(int childPageId, int newParentPageId) throws IOException {
     Page childPage = pager.getPage(childPageId);
-    byte nodeType = childPage.getBuffer().get(0);
-    if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
-      new LeafNode(childPage).setParentPageId(newParentPageId);
-    } else {
-      new InternalNode(childPage).setParentPageId(newParentPageId);
-    }
+    Node node = Node.from(childPage);
+    node.setParentPageId(newParentPageId);
     childPage.markDirty();
   }
 
@@ -165,11 +161,11 @@ public class BTree {
     }
     Page current = pager.getPage(rootPageId);
     while (true) {
-      byte nodeType = current.getBuffer().get(0);
-      if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
+      Node node = Node.from(current);
+      if (node instanceof LeafNode) {
         return current.getId();
       }
-      InternalNode internalNode = new InternalNode(current);
+      InternalNode internalNode = (InternalNode) node;
       int childPageId = internalNode.getChildPageId(0);
       current = pager.getPage(childPageId);
     }

@@ -4,18 +4,9 @@ import java.nio.ByteBuffer;
 
 import com.gabrielo.backend.pager.Page;
 
-public class LeafNode {
+public final class LeafNode implements Node {
 
   private final Page page;
-
-  private static final int RECORD_SIZE = 68;
-
-  private static final int CELL_ID_SIZE = 4;
-
-  private static final int CELL_SIZE = CELL_ID_SIZE + RECORD_SIZE;
-
-  private static final int LEAF_HEADER_SIZE = NodeLayout.COMMON_HEADER_SIZE + NodeLayout.NUM_CELLS_SIZE
-      + NodeLayout.NEXT_LEAF_PAGE_ID_SIZE;
 
   public LeafNode(Page page) {
     this.page = page;
@@ -23,11 +14,11 @@ public class LeafNode {
 
   public void initialize() {
     ByteBuffer buffer = page.getBuffer();
-    buffer.put(0, NodeLayout.NODE_TYPE_LEAF);
-    buffer.put(1, (byte) 0); // isRoot: 0 = false
-    buffer.putInt(2, 0); // parentPageId: 0
-    buffer.putInt(6, 0); // numCells: 0
-    buffer.putInt(10, -1); // nextLeafPageId: -1 (no sibling)
+    buffer.put(NodeLayout.NODE_TYPE_OFFSET, NodeLayout.NODE_TYPE_LEAF);
+    buffer.put(NodeLayout.IS_ROOT_OFFSET, (byte) 0);
+    buffer.putInt(NodeLayout.PARENT_PAGE_ID_OFFSET, 0);
+    buffer.putInt(NodeLayout.NUM_CELLS_OFFSET, 0);
+    buffer.putInt(NodeLayout.NEXT_LEAF_PAGE_ID_OFFSET, -1);
   }
 
   public int getPageId() {
@@ -35,23 +26,23 @@ public class LeafNode {
   }
 
   public int getParentPageId() {
-    return page.getBuffer().getInt(2);
+    return page.getBuffer().getInt(NodeLayout.PARENT_PAGE_ID_OFFSET);
   }
 
   public void setParentPageId(int pageId) {
-    page.getBuffer().putInt(2, pageId);
+    page.getBuffer().putInt(NodeLayout.PARENT_PAGE_ID_OFFSET, pageId);
   }
 
   public int getNextLeafPageId() {
-    return page.getBuffer().getInt(10);
+    return page.getBuffer().getInt(NodeLayout.NEXT_LEAF_PAGE_ID_OFFSET);
   }
 
   public void setNextLeafPageId(int pageId) {
-    page.getBuffer().putInt(10, pageId);
+    page.getBuffer().putInt(NodeLayout.NEXT_LEAF_PAGE_ID_OFFSET, pageId);
   }
 
   public int getNumCells() {
-    return page.getBuffer().getInt(NodeLayout.COMMON_HEADER_SIZE);
+    return page.getBuffer().getInt(NodeLayout.NUM_CELLS_OFFSET);
   }
 
   public void insert(int key, byte[] record) {
@@ -59,17 +50,17 @@ public class LeafNode {
     int numCells = getNumCells();
     int insertIndex = findInsertPosition(key);
     shiftCellsToTheRight(buffer, numCells, insertIndex);
-    int cellOffset = LEAF_HEADER_SIZE + (insertIndex * CELL_SIZE);
+    int cellOffset = NodeLayout.LEAF_HEADER_SIZE + (insertIndex * NodeLayout.CELL_SIZE);
     buffer.putInt(cellOffset, key);
-    buffer.put(cellOffset + CELL_ID_SIZE, record);
-    buffer.putInt(NodeLayout.COMMON_HEADER_SIZE, numCells + 1);
+    buffer.put(cellOffset + NodeLayout.CELL_KEY_SIZE, record);
+    buffer.putInt(NodeLayout.NUM_CELLS_OFFSET, numCells + 1);
   }
 
   private void shiftCellsToTheRight(ByteBuffer buffer, int numCells, int insertIndex) {
     for (int i = numCells - 1; i >= insertIndex; i--) {
-      int srcOffset = LEAF_HEADER_SIZE + (i * CELL_SIZE);
-      int destOffset = srcOffset + CELL_SIZE;
-      byte[] cell = new byte[CELL_SIZE];
+      int srcOffset = NodeLayout.LEAF_HEADER_SIZE + (i * NodeLayout.CELL_SIZE);
+      int destOffset = srcOffset + NodeLayout.CELL_SIZE;
+      byte[] cell = new byte[NodeLayout.CELL_SIZE];
       buffer.get(srcOffset, cell);
       buffer.put(destOffset, cell);
     }
@@ -77,16 +68,16 @@ public class LeafNode {
 
   public byte[] getCell(int cellIndex) {
     ByteBuffer buffer = page.getBuffer();
-    int cellOffset = LEAF_HEADER_SIZE + (cellIndex * CELL_SIZE);
-    int recordOffset = cellOffset + CELL_ID_SIZE;
-    byte[] record = new byte[RECORD_SIZE];
+    int cellOffset = NodeLayout.LEAF_HEADER_SIZE + (cellIndex * NodeLayout.CELL_SIZE);
+    int recordOffset = cellOffset + NodeLayout.CELL_KEY_SIZE;
+    byte[] record = new byte[NodeLayout.RECORD_SIZE];
     buffer.get(recordOffset, record);
     return record;
   }
 
   public int getKey(int cellIndex) {
     ByteBuffer buffer = page.getBuffer();
-    int cellOffset = LEAF_HEADER_SIZE + (cellIndex * CELL_SIZE);
+    int cellOffset = NodeLayout.LEAF_HEADER_SIZE + (cellIndex * NodeLayout.CELL_SIZE);
     return buffer.getInt(cellOffset);
   }
 
@@ -122,8 +113,8 @@ public class LeafNode {
   }
 
   public boolean isFull() {
-    int numberOfCells = page.getBuffer().getInt(6);
-    int numberOfCellsFittingNode = (page.getSize() - LEAF_HEADER_SIZE) / CELL_SIZE;
+    int numberOfCells = getNumCells();
+    int numberOfCellsFittingNode = (page.getSize() - NodeLayout.LEAF_HEADER_SIZE) / NodeLayout.CELL_SIZE;
     return numberOfCells >= numberOfCellsFittingNode;
   }
 
@@ -144,10 +135,10 @@ public class LeafNode {
 
     // Copy upper half cells to the new leaf
     for (int i = splitIndex; i < totalCells; i++) {
-      int srcOffset = LEAF_HEADER_SIZE + (i * CELL_SIZE);
+      int srcOffset = NodeLayout.LEAF_HEADER_SIZE + (i * NodeLayout.CELL_SIZE);
       int destIndex = i - splitIndex;
-      int destOffset = LEAF_HEADER_SIZE + (destIndex * CELL_SIZE);
-      byte[] cell = new byte[CELL_SIZE];
+      int destOffset = NodeLayout.LEAF_HEADER_SIZE + (destIndex * NodeLayout.CELL_SIZE);
+      byte[] cell = new byte[NodeLayout.CELL_SIZE];
       srcBuffer.get(srcOffset, cell);
       destBuffer.put(destOffset, cell);
     }
@@ -170,6 +161,6 @@ public class LeafNode {
   }
 
   private void setNumCells(int numCells) {
-    page.getBuffer().putInt(NodeLayout.COMMON_HEADER_SIZE, numCells);
+    page.getBuffer().putInt(NodeLayout.NUM_CELLS_OFFSET, numCells);
   }
 }

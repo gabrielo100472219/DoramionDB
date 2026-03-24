@@ -1,7 +1,5 @@
 package com.gabrielo.backend.disk;
 
-import com.gabrielo.backend.pager.Page;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -84,7 +82,7 @@ public class DiskManager {
     channel.write(buffer, 0);
   }
 
-  public Page readPageFromDisk(int id) throws IOException {
+  public byte[] readPageFromDisk(int id) throws IOException {
     try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ)) {
       if (channel.size() == 0) {
         return null;
@@ -97,17 +95,15 @@ public class DiskManager {
       int pageId = pageBuffer.getInt();
 
       if (pageId == id) {
-        Page page = new Page(id);
         byte[] data = new byte[pageSize];
         pageBuffer.get(data);
-        page.getBuffer().put(0, data);
-        return page;
+        return data;
       }
       return null;
     }
   }
 
-  public void writePageToDisk(Page page) throws IOException {
+  public void writePageToDisk(int id, byte[] buffer) throws IOException {
     try (var channel = FileChannel.open(filePath, StandardOpenOption.CREATE, StandardOpenOption.READ,
         StandardOpenOption.WRITE)) {
 
@@ -116,15 +112,15 @@ public class DiskManager {
       }
 
       ByteBuffer pageBuffer = ByteBuffer.allocate(PAGE_ID_SIZE + pageSize);
-      pageBuffer.putInt(page.getId());
-      pageBuffer.put(page.getBuffer().array());
+      pageBuffer.putInt(id);
+      pageBuffer.put(buffer);
       pageBuffer.flip();
 
-      long writePosition = METADATA_SIZE + (long) page.getId() * (PAGE_ID_SIZE + pageSize);
+      long writePosition = METADATA_SIZE + (long) id * (PAGE_ID_SIZE + pageSize);
       channel.write(pageBuffer, writePosition);
 
       int numberOfPages = readNumberOfPagesFromMetadata(channel);
-      if (page.getId() >= numberOfPages) {
+      if (id >= numberOfPages) {
         increaseNumberOfPagesToMetadata(numberOfPages, channel);
       }
     }
