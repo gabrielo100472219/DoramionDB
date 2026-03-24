@@ -147,6 +147,15 @@ public class BTree {
     childPage.markDirty();
   }
 
+  public void open() throws IOException {
+    this.rootPageId = pager.readRootPageId();
+  }
+
+  public void close() throws IOException {
+    pager.writeRootPageId(rootPageId);
+    pager.flushAllPages();
+  }
+
   public int getRootPageId() {
     return rootPageId;
   }

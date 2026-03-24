@@ -22,13 +22,11 @@ public class Table {
 	}
 
 	public void open() throws IOException {
-		int rootPageId = pager.readRootPageId();
-		bTree.setRootPageId(rootPageId);
+		bTree.open();
 	}
 
 	public void close() throws IOException {
-		pager.writeRootPageId(bTree.getRootPageId());
-		pager.flushAllPages();
+		bTree.close();
 	}
 
 	@SneakyThrows
