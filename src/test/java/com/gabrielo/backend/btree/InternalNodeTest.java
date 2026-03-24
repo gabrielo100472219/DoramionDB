@@ -9,13 +9,11 @@ import com.gabrielo.backend.pager.Page;
 
 public class InternalNodeTest {
 
-  int recordSize = 68;
-
   InternalNode internalNode;
 
   @BeforeEach
   void beforeEach() {
-    Page page = new Page(0, recordSize);
+    Page page = new Page(0);
     internalNode = new InternalNode(page);
     internalNode.initialize();
   }

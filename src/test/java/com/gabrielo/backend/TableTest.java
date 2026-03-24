@@ -1,5 +1,6 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.btree.BTree;
 import com.gabrielo.backend.disk.DiskManager;
 import com.gabrielo.backend.pager.Pager;
 import org.junit.jupiter.api.Test;
@@ -17,11 +18,14 @@ class TableTest {
 	@TempDir
 	Path tempDir;
 
+	private int testCounter = 0;
+
 	private Table createTable() {
-		Path dbFile = tempDir.resolve("test.ddb");
+		Path dbFile = tempDir.resolve("test" + (testCounter++) + ".ddb");
 		DiskManager diskManager = new DiskManager(dbFile, PAGE_SIZE);
 		Pager pager = new Pager(diskManager);
-		return new Table(pager);
+		BTree bTree = new BTree(pager);
+		return new Table(pager, bTree);
 	}
 
 	@Test

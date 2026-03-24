@@ -2,6 +2,7 @@ package com.gabrielo;
 
 import com.gabrielo.backend.disk.DiskManager;
 import com.gabrielo.backend.pager.Pager;
+import com.gabrielo.backend.btree.BTree;
 import com.gabrielo.backend.Table;
 import com.gabrielo.core.Interface;
 import com.gabrielo.core.SqlEngine;
@@ -16,7 +17,8 @@ public class Main {
 	public static void main(String[] args) {
 		DiskManager diskManager = new DiskManager(DB_PATH, PAGE_SIZE);
 		Pager pager = new Pager(diskManager);
-		Table table = new Table(pager);
+		BTree bTree = new BTree(pager);
+		Table table = new Table(pager, bTree);
 		SqlEngine engine = new SqlEngine(table);
 		new Interface(engine).runDatabaseEngine();
 	}

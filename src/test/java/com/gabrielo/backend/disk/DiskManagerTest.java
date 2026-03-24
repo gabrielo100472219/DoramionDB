@@ -1,7 +1,5 @@
 package com.gabrielo.backend.disk;
 
-import com.gabrielo.backend.Record;
-import com.gabrielo.backend.RecordSerializer;
 import com.gabrielo.backend.pager.Page;
 import lombok.SneakyThrows;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
@@ -17,10 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DiskManagerTest {
 
   int pageSize = 4096;
-
-  int recordSize = 68;
-
-  RecordSerializer serializer = new RecordSerializer();
 
   @Test
   @SneakyThrows
@@ -46,105 +40,86 @@ class DiskManagerTest {
 
   @Test
   @SneakyThrows
-  void insertsOneEmptyPageToFile(@TempDir Path tempDir) {
+  void writesAndReadsOneEmptyPage(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    int id = 0;
-    Page page = new Page(id, recordSize);
+    Page page = new Page(0);
 
     diskManager.writePageToDisk(page);
 
-    assertThat(diskManager.readPageFromDisk(id)).usingRecursiveComparison().isEqualTo(page);
+    assertThat(diskManager.readPageFromDisk(0))
+        .usingRecursiveComparison(getPageComparisonConfig())
+        .isEqualTo(page);
   }
 
   @Test
   @SneakyThrows
-  void writesMultipleEmptyPagesToFile(@TempDir Path tempDir) {
+  void writesAndReadsMultipleEmptyPages(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    List<Page> pagesToInsert = List.of(new Page(1, recordSize), new Page(2, recordSize), new Page(3, recordSize));
+    List<Page> pages = List.of(new Page(0), new Page(1), new Page(2));
 
-    for (Page page : pagesToInsert) {
+    for (Page page : pages) {
       diskManager.writePageToDisk(page);
     }
 
-    assertThat(diskManager.readPageFromDisk(1)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.getFirst());
-    assertThat(diskManager.readPageFromDisk(2)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(1));
-    assertThat(diskManager.readPageFromDisk(3)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(2));
+    for (int i = 0; i < pages.size(); i++) {
+      assertThat(diskManager.readPageFromDisk(i))
+          .usingRecursiveComparison(getPageComparisonConfig())
+          .isEqualTo(pages.get(i));
+    }
   }
 
   @Test
   @SneakyThrows
-  void insertsOneNonEmptyPageToFile(@TempDir Path tempDir) {
+  void writesAndReadsPageWithData(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    int id = 0;
-    Page page = new Page(id, recordSize);
-    List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-        new Record(2, "Brielingson", "brielingson@pescao.com"),
-        new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-    recordsToInsert.forEach(recordToInsert -> page.insert(serializer.serialize(recordToInsert)));
+    Page page = new Page(0);
+    page.getBuffer().putInt(0, 42);
+    page.getBuffer().putInt(100, 999);
 
     diskManager.writePageToDisk(page);
 
-    assertThat(diskManager.readPageFromDisk(id)).usingRecursiveComparison().isEqualTo(page);
+    Page loaded = diskManager.readPageFromDisk(0);
+    assertThat(loaded.getBuffer().getInt(0)).isEqualTo(42);
+    assertThat(loaded.getBuffer().getInt(100)).isEqualTo(999);
   }
 
   @Test
   @SneakyThrows
-  void writesMultipleNonEmptyPagesToFile(@TempDir Path tempDir) {
+  void writesAndReadsMultiplePagesWithData(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    List<Page> pagesToInsert = List.of(new Page(1, recordSize), new Page(2, recordSize), new Page(3, recordSize));
-    List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-        new Record(2, "Brielingson", "brielingson@pescao.com"),
-        new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-    pagesToInsert.forEach(
-        page -> recordsToInsert.forEach(recordToInsert -> page.insert(serializer.serialize(recordToInsert))));
 
-    for (Page page : pagesToInsert) {
+    for (int i = 0; i < 3; i++) {
+      Page page = new Page(i);
+      page.getBuffer().putInt(0, i * 100);
       diskManager.writePageToDisk(page);
     }
 
-    assertThat(diskManager.readPageFromDisk(1)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.getFirst());
-    assertThat(diskManager.readPageFromDisk(2)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(1));
-    assertThat(diskManager.readPageFromDisk(3)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(2));
+    for (int i = 0; i < 3; i++) {
+      Page loaded = diskManager.readPageFromDisk(i);
+      assertThat(loaded.getBuffer().getInt(0)).isEqualTo(i * 100);
+    }
   }
 
   @Test
   @SneakyThrows
-  void updatesPageDoesntDuplicateIt(@TempDir Path tempDir) {
+  void updatingPageDoesNotDuplicateIt(@TempDir Path tempDir) {
     Path testFile = tempDir.resolve("test.ddb");
     DiskManager diskManager = new DiskManager(testFile, pageSize);
-    List<Page> pagesToInsert = List.of(new Page(1, recordSize), new Page(2, recordSize), new Page(3, recordSize));
-    List<Record> recordsToInsert = List.of(new Record(1, "Gabrielo", "gabrielodon@pescao.com"),
-        new Record(2, "Brielingson", "brielingson@pescao.com"),
-        new Record(3, "Gabrielin", "gabrielin@pescao.com"));
-    pagesToInsert.forEach(
-        page -> recordsToInsert.forEach(recordToInsert -> page.insert(serializer.serialize(recordToInsert))));
 
-    for (Page page : pagesToInsert) {
-      diskManager.writePageToDisk(page);
-    }
+    Page page = new Page(0);
+    page.getBuffer().putInt(0, 1);
+    diskManager.writePageToDisk(page);
 
-    for (Page page : pagesToInsert) {
-      page.insert(serializer.serialize(new Record(4, "Broilo", "broilorex@gnail.com")));
-      diskManager.writePageToDisk(page);
-    }
+    page.getBuffer().putInt(0, 2);
+    diskManager.writePageToDisk(page);
 
-    assertThat(diskManager.getNumberOfPages() == 3);
-    assertThat(diskManager.readPageFromDisk(1)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.getFirst());
-    assertThat(diskManager.readPageFromDisk(2)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(1));
-    assertThat(diskManager.readPageFromDisk(3)).usingRecursiveComparison(getPageComparisonConfig())
-        .isEqualTo(pagesToInsert.get(2));
+    assertThat(diskManager.getNumberOfPages()).isEqualTo(1);
+    Page loaded = diskManager.readPageFromDisk(0);
+    assertThat(loaded.getBuffer().getInt(0)).isEqualTo(2);
   }
 
   private RecursiveComparisonConfiguration getPageComparisonConfig() {

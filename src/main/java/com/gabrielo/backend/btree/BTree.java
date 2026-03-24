@@ -89,15 +89,6 @@ public class BTree {
     int midIndex = totalKeys / 2;
     int splitKey = node.getKey(midIndex);
 
-    // Copy keys and children from midIndex+1..totalKeys-1 to the new right node
-    // The key at midIndex is promoted up, not kept in either node
-    for (int i = midIndex + 1; i < totalKeys; i++) {
-      newRight.insert(node.getKey(i), node.getChildPageId(i), node.getRightChildPageId());
-    }
-
-    newRight = new InternalNode(newPage);
-    newRight.initialize();
-
     int originalRightChild = node.getRightChildPageId();
 
     for (int i = midIndex + 1; i < totalKeys; i++) {
@@ -158,6 +149,26 @@ public class BTree {
       new InternalNode(childPage).setParentPageId(newParentPageId);
     }
     childPage.markDirty();
+  }
+
+  public int getRootPageId() {
+    return rootPageId;
+  }
+
+  public int getLeftMostLeafPageId() throws IOException {
+    if (rootPageId == -1) {
+      return -1;
+    }
+    Page current = pager.getPage(rootPageId);
+    while (true) {
+      byte nodeType = current.getBuffer().get(0);
+      if (nodeType == NodeLayout.NODE_TYPE_LEAF) {
+        return current.getId();
+      }
+      InternalNode internalNode = new InternalNode(current);
+      int childPageId = internalNode.getChildPageId(0);
+      current = pager.getPage(childPageId);
+    }
   }
 
   public byte[] search(int key) throws IOException {

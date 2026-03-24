@@ -11,15 +11,13 @@ import com.gabrielo.backend.pager.Page;
 
 public class LeafNodeTest {
 
-  int recordSize = 68;
-
   RecordSerializer serializer = new RecordSerializer();
 
   LeafNode leafNode;
 
   @BeforeEach
   void beforeEach() {
-    Page page = new Page(0, recordSize);
+    Page page = new Page(0);
     leafNode = new LeafNode(page);
     leafNode.initialize();
   }
@@ -112,7 +110,7 @@ public class LeafNodeTest {
       leafNode.insert(r.id(), serializer.serialize(r));
     }
 
-    Page rightPage = new Page(1, recordSize);
+    Page rightPage = new Page(1);
     int splitKey = leafNode.split(rightPage);
     LeafNode rightNode = new LeafNode(rightPage);
 
@@ -128,7 +126,7 @@ public class LeafNodeTest {
       leafNode.insert(r.id(), serializer.serialize(r));
     }
 
-    Page rightPage = new Page(1, recordSize);
+    Page rightPage = new Page(1);
     leafNode.split(rightPage);
     LeafNode rightNode = new LeafNode(rightPage);
 
@@ -149,7 +147,7 @@ public class LeafNodeTest {
       leafNode.insert(r.id(), serializer.serialize(r));
     }
 
-    Page rightPage = new Page(1, recordSize);
+    Page rightPage = new Page(1);
     leafNode.split(rightPage);
     LeafNode rightNode = new LeafNode(rightPage);
 

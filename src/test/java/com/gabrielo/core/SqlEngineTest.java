@@ -1,5 +1,6 @@
 package com.gabrielo.core;
 
+import com.gabrielo.backend.btree.BTree;
 import com.gabrielo.backend.disk.DiskManager;
 import com.gabrielo.backend.pager.Pager;
 import com.gabrielo.backend.Record;
@@ -25,7 +26,8 @@ class SqlEngineTest {
 		Path dbFile = tempDir.resolve("test" + (testCounter++) + ".ddb");
 		DiskManager diskManager = new DiskManager(dbFile, PAGE_SIZE);
 		Pager pager = new Pager(diskManager);
-		return new Table(pager);
+		BTree bTree = new BTree(pager);
+		return new Table(pager, bTree);
 	}
 
 	@Test

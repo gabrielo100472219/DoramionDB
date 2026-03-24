@@ -1,5 +1,6 @@
 package com.gabrielo.backend;
 
+import com.gabrielo.backend.btree.BTree;
 import com.gabrielo.backend.disk.DiskManager;
 import com.gabrielo.backend.pager.Pager;
 import lombok.SneakyThrows;
@@ -18,9 +19,9 @@ class CursorTest {
 
 	private static final int PAGE_SIZE = 4096;
 
-	private static final int RECORDS_PER_PAGE = PAGE_SIZE / 68;
-
 	private Pager pager;
+
+	private BTree bTree;
 
 	@BeforeEach
 	@SneakyThrows
@@ -28,6 +29,13 @@ class CursorTest {
 		Path testFile = tempDir.resolve("test.ddb");
 		DiskManager diskManager = new DiskManager(testFile, PAGE_SIZE);
 		pager = new Pager(diskManager);
+		bTree = new BTree(pager);
+	}
+
+	private void insertRecord(int id, String name, String email) throws Exception {
+		RecordSerializer serializer = new RecordSerializer();
+		Record record = new Record(id, name, email);
+		bTree.insert(id, serializer.serialize(record));
 	}
 
 	@Nested
@@ -35,8 +43,8 @@ class CursorTest {
 
 		@Test
 		@SneakyThrows
-		void when_no_pages_exist_expect_false() {
-			Cursor cursor = new Cursor(pager);
+		void when_no_records_exist_expect_false() {
+			Cursor cursor = new Cursor(pager, bTree);
 
 			boolean result = cursor.hasNext();
 
@@ -46,8 +54,8 @@ class CursorTest {
 		@Test
 		@SneakyThrows
 		void when_single_record_exists_expect_true() {
-			pager.insert(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			boolean result = cursor.hasNext();
 
@@ -56,11 +64,11 @@ class CursorTest {
 
 		@Test
 		@SneakyThrows
-		void when_multiple_records_in_single_page_expect_true() {
-			pager.insert(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-			pager.insert(new Record(2, "Maria", "maria@example.com"));
-			pager.insert(new Record(3, "Juan", "juan@example.com"));
-			Cursor cursor = new Cursor(pager);
+		void when_multiple_records_in_single_leaf_expect_true() {
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			insertRecord(2, "Maria", "maria@example.com");
+			insertRecord(3, "Juan", "juan@example.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			boolean result = cursor.hasNext();
 
@@ -69,11 +77,11 @@ class CursorTest {
 
 		@Test
 		@SneakyThrows
-		void when_multiple_pages_exist_expect_true() {
-			for (int i = 0; i < 50; i++) {
-				pager.insert(new Record(i, "User" + i, "user" + i + "@example.com"));
+		void when_multiple_leaves_exist_expect_true() {
+			for (int i = 0; i < 60; i++) {
+				insertRecord(i, "User" + i, "user" + i + "@example.com");
 			}
-			Cursor cursor = new Cursor(pager);
+			Cursor cursor = new Cursor(pager, bTree);
 
 			boolean result = cursor.hasNext();
 
@@ -88,8 +96,8 @@ class CursorTest {
 		@SneakyThrows
 		void when_single_record_exists_expect_record_returned() {
 			Record expected = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
-			pager.insert(expected);
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			Record result = cursor.next();
 
@@ -100,10 +108,9 @@ class CursorTest {
 		@SneakyThrows
 		void when_multiple_records_exist_expect_first_record_returned() {
 			Record first = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
-			Record second = new Record(2, "Maria", "maria@example.com");
-			pager.insert(first);
-			pager.insert(second);
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			insertRecord(2, "Maria", "maria@example.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			Record result = cursor.next();
 
@@ -113,60 +120,57 @@ class CursorTest {
 		@Test
 		@SneakyThrows
 		void when_called_twice_expect_second_record_returned() {
-			Record first = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
-			Record second = new Record(2, "Maria", "maria@example.com");
-			pager.insert(first);
-			pager.insert(second);
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			insertRecord(2, "Maria", "maria@example.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			cursor.next();
 			Record result = cursor.next();
 
-			assertThat(result).isEqualTo(second);
+			assertThat(result).isEqualTo(new Record(2, "Maria", "maria@example.com"));
 		}
 
 		@Test
 		@SneakyThrows
 		void when_iterating_all_records_expect_all_records_returned_in_order() {
-			Record first = new Record(1, "Gabrielo", "gabrielodon@pescao.com");
-			Record second = new Record(2, "Maria", "maria@example.com");
-			Record third = new Record(3, "Juan", "juan@example.com");
-			pager.insert(first);
-			pager.insert(second);
-			pager.insert(third);
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			insertRecord(2, "Maria", "maria@example.com");
+			insertRecord(3, "Juan", "juan@example.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
-			assertThat(cursor.next()).isEqualTo(first);
-			assertThat(cursor.next()).isEqualTo(second);
-			assertThat(cursor.next()).isEqualTo(third);
+			assertThat(cursor.next()).isEqualTo(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
+			assertThat(cursor.next()).isEqualTo(new Record(2, "Maria", "maria@example.com"));
+			assertThat(cursor.next()).isEqualTo(new Record(3, "Juan", "juan@example.com"));
 		}
 
 		@Test
 		@SneakyThrows
-		void when_page_boundary_crossed_expect_first_record_of_next_page_returned() {
-			for (int i = 0; i < RECORDS_PER_PAGE; i++) {
-				pager.insert(new Record(i, "User" + i, "user" + i + "@example.com"));
-			}
-			Record firstOfSecondPage = new Record(100, "SecondPage", "secondpage@example.com");
-			pager.insert(firstOfSecondPage);
-			Cursor cursor = new Cursor(pager);
-
-			for (int i = 0; i < RECORDS_PER_PAGE; i++) {
-				cursor.next();
-			}
-			Record result = cursor.next();
-
-			assertThat(result).isEqualTo(firstOfSecondPage);
-		}
-
-		@Test
-		@SneakyThrows
-		void when_iterating_across_multiple_pages_expect_all_records_returned() {
-			int totalRecords = RECORDS_PER_PAGE + 5;
+		void when_leaf_boundary_crossed_expect_records_from_next_leaf() {
+			// Insert enough records to force a leaf split (>56)
+			int totalRecords = 60;
 			for (int i = 0; i < totalRecords; i++) {
-				pager.insert(new Record(i, "User" + i, "user" + i + "@example.com"));
+				insertRecord(i, "User" + i, "user" + i + "@example.com");
 			}
-			Cursor cursor = new Cursor(pager);
+			Cursor cursor = new Cursor(pager, bTree);
+
+			int count = 0;
+			while (cursor.hasNext()) {
+				Record record = cursor.next();
+				assertThat(record.id()).isEqualTo(count);
+				count++;
+			}
+
+			assertThat(count).isEqualTo(totalRecords);
+		}
+
+		@Test
+		@SneakyThrows
+		void when_iterating_across_multiple_leaves_expect_all_records_returned() {
+			int totalRecords = 200;
+			for (int i = 0; i < totalRecords; i++) {
+				insertRecord(i, "User" + i, "user" + i + "@example.com");
+			}
+			Cursor cursor = new Cursor(pager, bTree);
 
 			int count = 0;
 			while (cursor.hasNext()) {
@@ -181,8 +185,8 @@ class CursorTest {
 		@Test
 		@SneakyThrows
 		void when_no_more_records_expect_exception() {
-			pager.insert(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			Cursor cursor = new Cursor(pager, bTree);
 			cursor.next();
 
 			ThrowingCallable result = cursor::next;
@@ -193,7 +197,7 @@ class CursorTest {
 		@Test
 		@SneakyThrows
 		void when_no_records_exist_expect_exception() {
-			Cursor cursor = new Cursor(pager);
+			Cursor cursor = new Cursor(pager, bTree);
 
 			ThrowingCallable result = cursor::next;
 
@@ -203,9 +207,9 @@ class CursorTest {
 		@Test
 		@SneakyThrows
 		void when_has_next_returns_false_and_next_called_expect_exception() {
-			pager.insert(new Record(1, "Gabrielo", "gabrielodon@pescao.com"));
-			pager.insert(new Record(2, "Maria", "maria@example.com"));
-			Cursor cursor = new Cursor(pager);
+			insertRecord(1, "Gabrielo", "gabrielodon@pescao.com");
+			insertRecord(2, "Maria", "maria@example.com");
+			Cursor cursor = new Cursor(pager, bTree);
 
 			while (cursor.hasNext()) {
 				cursor.next();
